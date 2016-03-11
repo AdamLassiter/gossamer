@@ -8,14 +8,12 @@ from socket import create_connection as Socket
 # TODO: Finish AddressDirectory code
 
 
-
 class Node:
 
     def __init__(self, io, signature):
         self.signature = signature
         self.io = io
         self.addr_dir = AddressDirectory()
-
 
     def connect(self, address, port):
         sock = Socket((address, port))
@@ -27,18 +25,14 @@ class Node:
         # patrons send address directory
         pass
 
-
     def listen(self, ):
         pass
-
 
     def send(self, target):
         pass
 
-
     def recv(self):
         pass
-
 
 
 class Onion:
@@ -47,46 +41,46 @@ class Onion:
         pass
 
 
-
 class User:
 
-    # Signature - str?
+    # TODO: Test class
+
+    # Signature - str of Signature object
     # Distance - int
     # Direction - Node
     def __init__(self, signature, distance, direction):
+        assert isinstance(signature, )
         self.signature = signature
         self.distance = distance
         self.direction = direction
-
 
     # Signatures should be unique and constant
     def __eq__(self, other):
         return self.signature == other.signature
 
-
     # Update with new distances and directions
-    def upadte(self, distance, direction):
+    def update(self, distance, direction):
         self.distance = self.distance if self.distance < distance else distance
         self.direction = self.direction if self.distance < distance else direction
 
 
-
 class AddressDirectoy:
+
+    # TODO: Test class
 
     # Initialise to empty directory
     def __init__(self):
         #self.directory = {name:user}
-        self.directory = {None:None}
-
+        self.directory = {None: None}
 
     # Add a user with a specific signature to the directory
     # Presume they have just joined
     def add(self, user, name=None):
         # Generate a random, pronouncable, temporary name
         while name in self.directory.keys():
-            name = ''.join([choice('aeiou' if i%2 else 'bcdfghklmnprstvw') for i in range(8)])
+            name = ''.join(
+                [choice('aeiou' if i % 2 else 'bcdfghklmnprstvw') for i in range(8)])
         self.directory[name] = user
-
 
     # Remove a user with specific signature from the directory
     # Presume they have quit
@@ -95,6 +89,5 @@ class AddressDirectoy:
             signature = self.directory[name]
             del self.directory[name]
 
-
     def export(self):
-        return [ (name, user.signature) for name, signature in self.directory.items() ]
+        return [(name, user.signature) for name, user in self.directory.items()]
