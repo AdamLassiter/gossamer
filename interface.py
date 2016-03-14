@@ -31,7 +31,7 @@ class io:
                 elif 32 <= ord(input_chr):  # Printable character
                     self.input_str += input_chr
                     stdout.write(input_chr)
-        string, self.input_str = input_str, ""
+        string, self.input_str = self.input_str, ""
         return string
 
     def write(self, string):

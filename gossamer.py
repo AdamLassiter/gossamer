@@ -1,38 +1,51 @@
 from threading import Thread
-import protocol
-from socket import create_connection as Socket
+from protocol import SecureChannel
+from socket import create_connection as Socket,
+    socket as ServerSocket
 
-# TODO: Finish Node code
-# TODO: Finish Seed code
-# TODO: Finish Onion code
-# TODO: Finish AddressDirectory code
+# TODO: Write Onion code
 
 
 class Node:
 
-    def __init__(self, io, signature):
+    def __init__(self, signature):
         self.signature = signature
-        self.io = io
         self.addr_dir = AddressDirectory()
 
-    def connect(self, address, port):
+    def connect(self, sock):
+        assert isinstance(sock, Socket)
+        secure_channel = SecureChannel(sock, self.signature, True)
+        secure_channel.connect()
+        return secure_channel
+
+    def listen(sock):
+        assert isinstance(sock, ServerSocket)
+        sock.listen(1)
+        while True:
+            secure_channel = SecureChannel(
+                sock.accept(), self.signature, False)
+            secure_channel.connect()
+            yield secure_channel
+
+    def create_client(address, port):
         sock = Socket((address, port))
-        secure_channel = protocol.SecureChannel(sock, self.signature, False)
-        # connect to seed (name and password)
-        # get patrons and timestamped username
-        # connect to patrons
-        # send random start distance, name timestamp and public key
-        # patrons send address directory
-        pass
+        return sock
 
-    def listen(self, ):
-        pass
+    def create_server(address, port):
+        from socket import AF_INET, SOCK_STREAM
+        sock = ServerSocket(AF_INET, SOCK_STREAM)
+        sock.bind(address, port)
+        return sock
 
-    def send(self, target):
-        pass
+    def send(self, target, message):
+        assert self.addr_dir.contains(target)
+        channel = self.addr_dir.get(target)
+        channel.send(message)
 
-    def recv(self):
-        pass
+    def recv(self, source):
+        assert isinstance(source, SecureChannel)
+        while True:
+            yield source.recv()
 
 
 class Onion:
@@ -46,10 +59,9 @@ class User:
     # TODO: Test class
 
     # Signature - str of Signature object
-    # Distance - int
-    # Direction - Node
+    # Distance -  int
+    # Direction - SecureChannel
     def __init__(self, signature, distance, direction):
-        assert isinstance(signature, )
         self.signature = signature
         self.distance = distance
         self.direction = direction
@@ -76,7 +88,9 @@ class AddressDirectoy:
     # Add a user with a specific signature to the directory
     # Presume they have just joined
     def add(self, user, name=None):
+        assert isinstance(user, User)
         # Generate a random, pronouncable, temporary name
+        # ~10k names holds p < 0.05 of collisions
         while name in self.directory.keys():
             name = ''.join(
                 [choice('aeiou' if i % 2 else 'bcdfghklmnprstvw') for i in range(8)])
@@ -88,6 +102,15 @@ class AddressDirectoy:
         if name in self.directory.keys():
             signature = self.directory[name]
             del self.directory[name]
+
+    def get(self, name):
+        return self.directory[name]
+
+    def contains(self, name):
+        return self.directory.contains(name)
+
+    def get_route_to(self, name):
+        assert self.contains(name)
 
     def export(self):
         return [(name, user.signature) for name, user in self.directory.items()]

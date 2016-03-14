@@ -70,7 +70,7 @@ class SecureChannel:
             self._send(str(private))
             public = crypto.AsymmetricEncryption(
                 key=private.encrypt(self._recv()))
-            self._send(public.decrypt(private.encrypt(str(self.symmetric))))
+            self._send(public.decrypt(private.encrypt(str(symmetric))))
             self._send(symmetric.encrypt(str(signature)))
             other_sig = crypto.Signature(kry=symmetric.decrypt(self._recv()))
         else:
@@ -78,7 +78,7 @@ class SecureChannel:
             self._send(public.decrypt(str(private)))
             key = public.decrypt(private.encrypt(self._recv()))
             symmetric = crypto.SymmetricEncryption(key=key)
-            other_sig = crypto.Signature(kry=symmetric.decrypt(self._recv()))
+            other_sig = crypto.Signature(key=symmetric.decrypt(self._recv()))
             self._send(symmetric.encrypt(str(signature)))
         self.msg_generator = MessageGenerator(
             symmetric, signature, other_sig, padding, hashchain)
@@ -90,7 +90,7 @@ Message format:
 |                    symmetric encrypted data                    |
 | salt | message | asymmetric encrypted signature | chained hash |
                  |        hash of message         |
-Each block is preceded by its length
+Each block is preceeded by its length
 """
 
 
@@ -106,7 +106,7 @@ class MessageGenerator:
     def construct(self, text):
         def add_block(text, data):
             text[0] += pack("q", len(data)) + data
-        message = [""]                                    # Mutability hack
+        message = [""]                                      # Mutability hack
         add_block(message, self.padding.pad(""))            # Salt
         add_block(message, text)                            # Message text
         add_block(message, self.self_signature.sign(text))  # Signature
