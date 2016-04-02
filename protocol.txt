@@ -1,0 +1,55 @@
+On new connection:
+
+	client connects directly to seed (ip or web address)
+
+	if new user:
+		client sends desired username and password
+		seed stores
+	if old user:
+		sends seed username, password
+		seed verifies
+
+	seed asks for patrons of the user:
+		sends all the username
+		users either ignore, or reply "accept <user>"
+		wait until two/three/whatever replies
+
+	seed tells joining user and patrons of connection details
+	seed sends new user timestamped username and web-wide key
+
+	user generates public/private keys and connects to patrons
+	user sends random 32-bit number to both patrons, timestamped name and public key
+		(also stores for self)
+
+		patrons send to all their connected friends a newuser message:
+			number+1 mod 2^31, timestamped name, public key
+
+		friends decrypt and check the timestamp (within 5 mins)
+		friends store name, direction recieved from and 'distance'
+			swap and send on if a smaller distance is found
+				if (new_distance - current_distace) % 2^31 < 0
+			pick randomly if equal distances
+
+		REPEAT
+
+	patrons send new user their 'address directory'
+		user compiles shortest routes from the two
+
+	user is now a node of the web
+
+
+
+On message send:
+	
+	construct an onion by randomly choosing a path (including self at some point):
+		message = [ target, padding & salting, message = [ ... ] ]
+
+	send along shortest route
+
+	each node will then:
+		receive
+		send along shortest route
+	or (if they are the intended target):
+		recieve
+		decrypt
+		either send along OR display
