@@ -7,18 +7,18 @@ from declarative import accepts, returns
 
 # TODO: Test module
 # TODO: Implement support for NTRU
-# TODO: Extract necessary Crypto modules to local folder?
+# TODO: Extract necessary pyCrypto modules to local folder?
 
 
-# Uses Random
 @accepts(int)
 @returns(str)
 def NewKey(length):
+    # Uses Random
     Random.new().read(length)
 
 
-# Uses SHA512
 class Hash:
+    # Uses SHA512
 
     def __init__(self):
         pass
@@ -32,8 +32,8 @@ class Hash:
         return hash_obj.digest()
 
 
-# Uses AES in CFB block mode
 class SymmetricEncryption:
+    # Uses AES in CFB block mode
 
     @accepts(SymmetricEncryption, strength=int, key=str)
     def __init__(self, strength=128, key=None):
@@ -60,8 +60,8 @@ class SymmetricEncryption:
         return cipher.decrypt(text)
 
 
-# Uses RSA
 class AsymmetricEncryption:
+    # Uses RSA
 
     @accepts(AsymmetricEncryption, strength=int, key=str)
     def __init__(self, strength=2048, key=None):
@@ -84,8 +84,8 @@ class AsymmetricEncryption:
         return self.key.decrypt(text)
 
 
-# Uses NewKey
 class SaltedPadding:
+    # Uses NewKey
 
     @accepts(SaltedPadding, padding_width=int, control_char=int)
     def __init__(self, padding_width=32, control_char=255):
@@ -111,8 +111,8 @@ class SaltedPadding:
         return text[:control_char_pos]
 
 
-# Uses AsymmetricEncryption
 class Signature:
+    # Uses AsymmetricEncryption
 
     @accepts(Signature, int, str)
     def __init__(self, strength=2048, key=None):
@@ -123,6 +123,9 @@ class Signature:
 
     def __str__(self):
         return self.key.publickey().exportKey()
+
+    def __eq__(self, other):
+        return str(self) == str(other)
 
     @accepts(Signature, str)
     @returns(str)
@@ -135,8 +138,8 @@ class Signature:
         return self.key.decrypt(signature) == Hash().digest(text)
 
 
-# Uses Hash
 class HashChain:
+    # Uses Hash
 
     def __init__(self):
         self.my_new_raw = NewKey(64)

@@ -12,10 +12,10 @@ RSA_STRENGTH = 1 << 11
 PADDING_WIDTH = 1 << 5
 
 
-# Managed socket for sending / receiving pure data
-# Will automatically detect length (unsigned long long = 18k TB)
-# Should be buffered, currently isn't
 class DumbChannel:
+    # Managed socket for sending / receiving pure data
+    # Will automatically detect length (unsigned long long = 18k TB)
+    # Should be buffered, currently isn't
 
     @accepts(DumbChannel, socket)
     def __init__(self, sock):
@@ -37,8 +37,8 @@ class DumbChannel:
         return self.sock.recv(int_len)
 
 
-# Used for sending message objects, manages client-server connection etc...
 class SecureChannel:
+    # Used for sending message objects, manages client-server connection etc...
 
     @accepts(SecureChannel, socket, crypto.Signature, dominant=bool)
     def __init__(self, sock, signature, dominant=False):
@@ -86,24 +86,22 @@ class SecureChannel:
             symmetric, signature, other_sig, padding, hashchain)
 
 
-# Creates message objects from encryption keys and text
-"""
-Message format:
-|                    symmetric encrypted data                    |
-| salt | message | asymmetric encrypted signature | chained hash |
-                 |        hash of message         |
-Each block is preceeded by its length
-"""
-
-
 class MessageGenerator:
+    """Creates message objects from encryption keys and text.
+
+    Message format:
+    |                    symmetric encrypted data                    |
+    | salt | message | asymmetric encrypted signature | chained hash |
+                     |        hash of message         |
+    Each block is preceeded by its length
+    """
 
     @accepts(MessageGenerator, crypto.SymmetricEncryption, crypto.Signature,
              crypto.Signature, crypto.SaltedPadding, crypto.HashChain)
-    def __init__(self, symmetric, self_signature, other_signature, padding, hashchain):
+    def __init__(self, symmetric, self_sig, other_sig, padding, hashchain):
         self.symmetric = symmetric
-        self.signature = self_signature
-        self.other_sig = other_signature
+        self.signature = self_sig
+        self.other_sig = other_sig
         self.padding = padding
         self.hashchain = hashchain
 
@@ -115,7 +113,7 @@ class MessageGenerator:
         message = [""]                                      # Mutability hack
         add_block(message, self.padding.pad(""))            # Salt
         add_block(message, text)                            # Message text
-        add_block(message, self.self_signature.sign(text))  # Signature
+        add_block(message, self.signature.sign(text))       # Signature
         add_block(message, self.hashchain.chain())          # Chained hash
         encrypted = self.symmetric.encrypt(message[0])      # Encrypted message
         return encrypted
