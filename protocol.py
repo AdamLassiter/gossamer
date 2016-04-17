@@ -1,5 +1,8 @@
 from struct import pack, unpack
+from socket import socket
 import crypto
+
+from declarative import accepts, returns
 
 # TODO: Test module
 
@@ -14,15 +17,18 @@ PADDING_WIDTH = 1 << 5
 # Should be buffered, currently isn't
 class DumbChannel:
 
+    @accepts(DumbChannel, socket)
     def __init__(self, sock):
         self.sock = sock
 
+    @accepts(DumbChannel, str)
     def send(self, text):
         int_len = len(data)
         str_len = pack("Q", int_len)
         self.sock.send(str_len)
         self.sock.send(data)
 
+    @returns(str)
     def recv(self):
         str_len = self.sock.recv(8)
         while len(str_len) != 8:  # hack
@@ -34,28 +40,22 @@ class DumbChannel:
 # Used for sending message objects, manages client-server connection etc...
 class SecureChannel:
 
+    @accepts(SecureChannel, socket, crypto.Signature, dominant=bool)
     def __init__(self, sock, signature, dominant=False):
         self.channel = DumbChannel(sock)
         self.signature = signature
         self.dominant = dominant
         self.msg_generator = None
 
-    def _send(self, data):
+    @accepts(str)
+    def send(self, message):
+        data = self.msg_generator.construct(message)
         self.channel.send(data)
 
-    def send(self, message):
-        if self.msg_generator:
-            data = self.msg_generator.construct(message)
-            self._send(data)
-        else:
-            raise Exception()
-
-    def _recv():
-        return self.channel.recv()
-
+    @returns(str)
     def recv(self):
         if self.msg_generator:
-            data = self._recv()
+            data = self.channel.recv()
             return self.msg_generator.deconstruct(data)
         else:
             raise Exception()
@@ -67,19 +67,21 @@ class SecureChannel:
         padding = crypto.SaltedPadding(padding_width=PADDING_WIDTH)
         hashchain = crypto.HashChain()
         if self.dominant:
-            self._send(str(private))
+            self.channel.send(str(private))
             public = crypto.AsymmetricEncryption(
-                key=private.encrypt(self._recv()))
-            self._send(public.decrypt(private.encrypt(str(symmetric))))
-            self._send(symmetric.encrypt(str(signature)))
-            other_sig = crypto.Signature(kry=symmetric.decrypt(self._recv()))
+                key=private.encrypt(self.channel.recv()))
+            self.channel.send(public.decrypt(private.encrypt(str(symmetric))))
+            self.channel.send(symmetric.encrypt(str(signature)))
+            other_sig = crypto.Signature(
+                kry=symmetric.decrypt(self.channel.recv()))
         else:
-            public = crypto.AsymmetricEncryption(key=self._recv())
-            self._send(public.decrypt(str(private)))
-            key = public.decrypt(private.encrypt(self._recv()))
+            public = crypto.AsymmetricEncryption(key=self.channel.recv())
+            self.channel.send(public.decrypt(str(private)))
+            key = public.decrypt(private.encrypt(self.channel.recv()))
             symmetric = crypto.SymmetricEncryption(key=key)
-            other_sig = crypto.Signature(key=symmetric.decrypt(self._recv()))
-            self._send(symmetric.encrypt(str(signature)))
+            other_sig = crypto.Signature(
+                key=symmetric.decrypt(self.channel.recv()))
+            self.channel.send(symmetric.encrypt(str(signature)))
         self.msg_generator = MessageGenerator(
             symmetric, signature, other_sig, padding, hashchain)
 
@@ -96,6 +98,8 @@ Each block is preceeded by its length
 
 class MessageGenerator:
 
+    @accepts(MessageGenerator, crypto.SymmetricEncryption, crypto.Signature,
+             crypto.Signature, crypto.SaltedPadding, crypto.HashChain)
     def __init__(self, symmetric, self_signature, other_signature, padding, hashchain):
         self.symmetric = symmetric
         self.signature = self_signature
@@ -103,6 +107,8 @@ class MessageGenerator:
         self.padding = padding
         self.hashchain = hashchain
 
+    @accepts(MessageGenerator, str)
+    @returns(str)
     def construct(self, text):
         def add_block(text, data):
             text[0] += pack("q", len(data)) + data
@@ -114,6 +120,8 @@ class MessageGenerator:
         encrypted = self.symmetric.encrypt(message[0])      # Encrypted message
         return encrypted
 
+    @accepts(MessageGenerator, str)
+    @returns(str)
     def deconstruct(self, encrypted):
         def rem_block(text):
             length, text[0] = unpack("q", text[0][:8]), text[0][8:]
