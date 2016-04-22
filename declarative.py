@@ -22,6 +22,9 @@ def accepts(*types, **kwtypes):
         def is_subset(subset, superset):
             return all(item in superset.items() for item in subset.items())
 
+        # Does this work?
+        # Else, 'reduce(lambda a, b: a & b, map(isinstance, args, arg_types))'
+        # Don't know about **kwargs, filter?
         @wraps(func)
         def wrapper(*args, **kwargs):
             if strength is not NONE:

@@ -15,6 +15,7 @@ class Node:
         self.addr_dir = AddressDirectory()
 
     @accepts(Node, Socket)
+    @returns(SecureChannel)
     def connect(self, sock):
         secure_channel = SecureChannel(sock, self.signature, True)
         secure_channel.connect()
@@ -44,22 +45,24 @@ class Node:
         sock.bind(address, port)
         return sock
 
-    @accetps(Node, User, str)
+    @accetps(Node, str, str)
     def send(self, target, message):
         assert self.addr_dir.contains(target)
-        channel = self.addr_dir.get(target)
+        user = self.addr_dir.get(target)
+        channel = user.direction
         channel.send(message)
 
     @accepts(Node, SecureChannel)
-    @returns(str)
+    @returns(str, str)
     def recv(self, source):
-        return source.recv()
+        return "user", source.recv()
 
 
 class Onion:
 
     # TODO: Implement all the onion
 
+    @accepts(Onion, str, )
     def __init__(self, message, route):
         pass
 
@@ -68,7 +71,7 @@ class User:
 
     # TODO: Test class
 
-    @accepts(User, protocol.crypto.Signature, int, str)
+    @accepts(User, protocol.crypto.Signature, int, SecureChannel)
     def __init__(self, signature, distance, direction):
         self.signature = signature
         self.distance = distance
@@ -78,7 +81,7 @@ class User:
         # Signatures should be unique and constant
         return self.signature == other.signature
 
-    @accepts(User, int, str)
+    @accepts(User, int, SecureChannel)
     def update(self, dist, dir):
         # Update with new distances and directions
         self.distance = self.distance if self.distance < dist else dist
