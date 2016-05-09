@@ -32,7 +32,7 @@ def accepts(*types, **kwtypes):
                 kwarg_types = dict([(k, type(v)) for k, v in kwargs.items()])
                 if arg_types != types or not is_subset(kwarg_types, kwtypes):
                     called_types = arg_types + \
-                        ["%s=%s" % kv for kv in kwarg_types.items()]
+                        tuple(["%s=%s" % kv for kv in kwarg_types.items()])
                     msg = info(func, "called with", called_types, types)
                     if strength is WEAK:
                         print >> stderr, "Warning: ", msg
