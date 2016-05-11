@@ -6,8 +6,10 @@ from Crypto.Cipher import AES
 from declarative import accepts, returns
 
 # TODO: Test module
-# TODO: Implement support for NTRU
 # TODO: Extract necessary pyCrypto modules to local folder?
+# TODO: SHA2 / SHA3 choice
+# TODO: RSA / NTRUEncrypt choice
+# IDEA: Symmetric algo. choice?
 
 
 @accepts(int)

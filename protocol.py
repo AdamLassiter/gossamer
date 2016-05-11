@@ -25,8 +25,8 @@ class DumbChannel:
     def send(self, text):
         int_len = len(data)
         str_len = pack("Q", int_len)
-        self.sock.send(str_len)
-        self.sock.send(data)
+        self.sock.sendall(str_len)
+        self.sock.sendall(data)
 
     @returns(str)
     def recv(self):

@@ -5,6 +5,7 @@ from socket import create_connection as Socket, socket as ServerSocket
 from declarative import accepts, returns
 
 # TODO: Write Onion code
+# TODO: Test module
 
 
 class Node:
@@ -24,7 +25,7 @@ class Node:
     @accepts(Node, ServerSocket)
     @returns(SecureChannel)
     def get_listener(self, sock):
-        sock.listen(1)
+        sock.listen(5)
         while True:
             secure_channel = SecureChannel(
                 sock.accept(), self.signature, False)

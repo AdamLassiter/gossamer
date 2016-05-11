@@ -1,7 +1,7 @@
 import gossamer
 
 # TODO: Test io class
-# TODO: FInish Program code
+# TODO: Finish Program code
 
 
 class io:
