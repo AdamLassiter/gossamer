@@ -18,20 +18,20 @@ class polynomial:
         self.c = coefficients
 
     def __str__(self):
-        string1 = ""
-        string2 = ""
+        top_line = ""
+        bottom_line = ""
         for n in range(len(self)):
             x = self[n]
             if not x:
                 continue
-            string1 += " " * (len(str(x)) + 1) + str(n) + "  "
-            string2 += str(x) + "x" + " " * len(str(n)) + "+ "
+            top_line += " " * (len(str(x)) + 1) + str(n) + "  "
+            bottom_line += str(x) + "x" + " " * len(str(n)) + "+ "
             if n == 0:
-                string1 = string1.replace("0", "")
-                string2 = string2.replace("x", "")
+                top_line = top_line.replace("0", "")
+                bottom_line = bottom_line.replace("x", "")
             if n == 1:
-                string1 = string1.replace("1", " ")
-        return string1[:-2] + "\n" + string2[:-2]
+                top_line = top_line.replace("1", " ")
+        return top_line[:-2] + "\n" + bottom_line[:-2]
 
     def zero(n):
         return polynomial([0 for x in range(n)])
@@ -112,11 +112,6 @@ class polynomial:
         for n in range(len(self)):
             if self[n] > p / 2.:
                 self[n] -= p
-
-    # TODO : Implement eea algorithm
-    def inverse(self, p):
-        def eea(a, b, p):
-            pass
 
     def deg(self):
         for i in range(1, len(self)):

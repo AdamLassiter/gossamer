@@ -6,14 +6,14 @@ from mmi import inverse_modpn as inverse
 
 
 def random_key(params):
-    k = [ 0 for n in range(params["N"]) ]
+    k = [0 for n in range(params["N"])]
     d1, d2 = params["d"], params["d"] - 1
     while d1:
-        r = randint(0, params["N"]-1)
+        r = randint(0, params["N"] - 1)
         k[r] = 1
         d1 -= 1
     while d2:
-        r = randint(0, params["N"]-1)
+        r = randint(0, params["N"] - 1)
         if not k[r]:
             k[r] = -1
             d2 -= 1
@@ -22,9 +22,9 @@ def random_key(params):
 
 def keygen(params):
     while True:
-        f = random_key(params)*params["p"] + 1
+        f = random_key(params) * params["p"] + 1
         try:
-            #fq = polynomial(inverse(f.c, params["q"]))
+            # fq = polynomial(inverse(f.c, params["q"]))
             fq = inverse(f, params["q"])
             break
         except Exception as e:
@@ -39,10 +39,11 @@ def encrypt(key, params, message):
     def encrypt_p(key, params, poly):
         poly.centerlift(params["p"])
         r = random_key(params)
-        e = r*key + poly
+        e = r * key + poly
         return e % params["q"]
-    polys = [ polynomial(x) for x in str_to_base(message, params["p"], params["N"]) ]
-    cipherpolys = [ encrypt_p(key, params, poly).c for poly in polys ]
+    polys = [polynomial(x) for x in str_to_base(
+        message, params["p"], params["N"])]
+    cipherpolys = [encrypt_p(key, params, poly).c for poly in polys]
     ciphertext = base_to_str(cipherpolys, params["q"])
     return ciphertext
 
@@ -50,23 +51,24 @@ def encrypt(key, params, message):
 def decrypt(key, params, ciphertext):
     def decrypt_p(key, params, poly):
         poly.centerlift(params["q"])
-        a = (key*poly) % params["q"]
+        a = (key * poly) % params["q"]
         a.centerlift(params["q"])
         b = a % params["p"]
         b.centerlift(params["p"])
         return b
-    polys = [ polynomial(x) for x in str_to_base(ciphertext, params["q"], params["N"]) ]
-    plainpolys = [ decrypt_p(key, params, poly).c for poly in polys ]
+    polys = [polynomial(x) for x in str_to_base(
+        ciphertext, params["q"], params["N"])]
+    plainpolys = [decrypt_p(key, params, poly).c for poly in polys]
     plaintext = base_to_str(plainpolys, params["p"])
     return plaintext
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     from parameters import k as K_PARAMS
     params = K_PARAMS[80]
-    m = "".join([ chr(randint(97, 122)) for n in range(1<<10) ])
+    m = "".join([chr(randint(97, 122)) for n in range(1 << 10)])
     print "Using N=%(N)d, p=%(p)d, q=%(q)d" % params
-    print "Message is %s" % ("'%s'" % m if len(m) < 1<<7
+    print "Message is %s" % ("'%s'" % m if len(m) < 1 << 7
                              else "long (%d)" % len(m))
     print "Generating keys..."
     priv, pub = keygen(params)

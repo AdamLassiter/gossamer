@@ -9,8 +9,6 @@ DEFAULT_MIN_BITS = 9
 DEFAULT_MAX_BITS = 12
 
 
-
-
 def compress(plaintext_bytes):
     encoder = ByteEncoder()
     return encoder.encodetobytes(plaintext_bytes)
@@ -21,15 +19,11 @@ def decompress(compressed_bytes):
     return decoder.decodefrombytes(compressed_bytes)
 
 
-
-
-
 class ByteEncoder(object):
-    
-    def __init__(self, max_width=DEFAULT_MAX_BITS):
-       self._encoder = Encoder(max_code_size=2**max_width)
-       self._packer = BitPacker(initial_code_size=self._encoder.code_size())
 
+    def __init__(self, max_width=DEFAULT_MAX_BITS):
+        self._encoder = Encoder(max_code_size=2**max_width)
+        self._packer = BitPacker(initial_code_size=self._encoder.code_size())
 
     def encodetobytes(self, bytesource):
         codepoints = self._encoder.encode(bytesource)
@@ -39,24 +33,24 @@ class ByteEncoder(object):
 
 
 class ByteDecoder(object):
-    
+
     def __init__(self):
-       self._decoder = Decoder()
-       self._unpacker = BitUnpacker(initial_code_size=self._decoder.code_size())
-       self.remaining = []
+        self._decoder = Decoder()
+        self._unpacker = BitUnpacker(
+            initial_code_size=self._decoder.code_size())
+        self.remaining = []
 
     def decodefrombytes(self, bytesource):
-       codepoints = self._unpacker.unpack(bytesource)
-       clearbytes = self._decoder.decode(codepoints)
-       
-       return clearbytes
+        codepoints = self._unpacker.unpack(bytesource)
+        clearbytes = self._decoder.decode(codepoints)
+
+        return clearbytes
 
 
 class BitPacker(object):
-    
-    def __init__(self, initial_code_size):
-       self._initial_code_size = initial_code_size
 
+    def __init__(self, initial_code_size):
+        self._initial_code_size = initial_code_size
 
     def pack(self, codepoints):
         tailbits = []
@@ -76,10 +70,10 @@ class BitPacker(object):
             codesize = codesize + 1
 
             if pt == END_OF_INFO_CODE:
-               while len(tailbits) % 8:
-                  tailbits.append(0)
-                  
-            if pt in [ CLEAR_CODE, END_OF_INFO_CODE ]:
+                while len(tailbits) % 8:
+                    tailbits.append(0)
+
+            if pt in [CLEAR_CODE, END_OF_INFO_CODE]:
                 nextwidth = minwidth
                 codesize = self._initial_code_size
             elif codesize >= (2 ** nextwidth):
@@ -93,26 +87,22 @@ class BitPacker(object):
 
                 tailbits = tailbits[8:]
 
-                       
         if tailbits:
             tail = bitstobytes(tailbits)
             for bt in tail:
                 yield struct.pack("B", bt)
 
-                
-
 
 class BitUnpacker(object):
-    
-    def __init__(self, initial_code_size):
-       self._initial_code_size = initial_code_size
 
+    def __init__(self, initial_code_size):
+        self._initial_code_size = initial_code_size
 
     def unpack(self, bytesource):
         bits = []
         offset = 0
         ignore = 0
-        
+
         codesize = self._initial_code_size
         minwidth = 8
         while (1 << minwidth) < codesize:
@@ -137,7 +127,7 @@ class BitUnpacker(object):
 
                 codesize = codesize + 1
 
-                if codepoint in [ CLEAR_CODE, END_OF_INFO_CODE ]:
+                if codepoint in [CLEAR_CODE, END_OF_INFO_CODE]:
                     codesize = self._initial_code_size
                     pointwidth = minwidth
                 else:
@@ -149,27 +139,22 @@ class BitUnpacker(object):
                     ignore = (8 - offset) % 8
 
 
-
 class Decoder(object):
-    
-    def __init__(self):
-       self._clear_codes()
-       self.remainder = []
 
+    def __init__(self):
+        self._clear_codes()
+        self.remainder = []
 
     def code_size(self):
-       return len(self._codepoints)
-
+        return len(self._codepoints)
 
     def decode(self, codepoints):
-        codepoints = [ cp for cp in codepoints ]
+        codepoints = [cp for cp in codepoints]
 
         for cp in codepoints:
             decoded = self._decode_codepoint(cp)
             for character in decoded:
                 yield character
-
-
 
     def _decode_codepoint(self, codepoint):
         ret = b""
@@ -177,58 +162,57 @@ class Decoder(object):
         if codepoint == CLEAR_CODE:
             self._clear_codes()
         elif codepoint == END_OF_INFO_CODE:
-            raise ValueError("End of information code not supported directly by this Decoder")
+            raise ValueError(
+                "End of information code not supported by this Decoder")
         else:
             if codepoint in self._codepoints:
-                ret = self._codepoints[ codepoint ]
-                if None != self._prefix:
-                    self._codepoints[ len(self._codepoints) ] = self._prefix + ret[0]
+                ret = self._codepoints[codepoint]
+                if self._prefix is not None:
+                    self._codepoints[len(self._codepoints)
+                                     ] = self._prefix + ret[0]
 
             else:
                 ret = self._prefix + self._prefix[0]
-                self._codepoints[ len(self._codepoints) ] = ret
+                self._codepoints[len(self._codepoints)] = ret
 
             self._prefix = ret
 
         return ret
 
-
     def _clear_codes(self):
-        self._codepoints = dict( (pt, struct.pack("B", pt)) for pt in range(256) )
+        self._codepoints = dict((pt, struct.pack("B", pt))
+                                for pt in range(256))
         self._codepoints[CLEAR_CODE] = CLEAR_CODE
         self._codepoints[END_OF_INFO_CODE] = END_OF_INFO_CODE
         self._prefix = None
 
 
 class Encoder(object):
-    
+
     def __init__(self, max_code_size=(2**DEFAULT_MAX_BITS)):
         self.closed = False
 
         self._max_code_size = max_code_size
         self._buffer = ''
-        self._clear_codes()            
+        self._clear_codes()
 
         if max_code_size < self.code_size():
-            raise ValueError("Max code size too small, (must be at least {0})".format(self.code_size()))
-
+            raise ValueError(
+                "Max code size too small, (must be at least {0})".format(
+                    self.code_size()))
 
     def code_size(self):
         return len(self._prefixes)
-
 
     def flush(self):
         flushed = []
 
         if self._buffer:
-            yield self._prefixes[ self._buffer ]
-            self._buffer = ''            
+            yield self._prefixes[self._buffer]
+            self._buffer = ''
 
         yield CLEAR_CODE
         self._clear_codes()
-
-            
-
 
     def encode(self, bytesource):
         for b in bytesource:
@@ -238,37 +222,32 @@ class Encoder(object):
             if self.code_size() >= self._max_code_size:
                 for pt in self.flush():
                     yield pt
-        
+
         for point in self.flush():
             yield point
 
-
     def _encode_byte(self, byte):
         new_prefix = self._buffer
-        
+
         if new_prefix + byte in self._prefixes:
             new_prefix = new_prefix + byte
         elif new_prefix:
-            encoded = self._prefixes[ new_prefix ]
+            encoded = self._prefixes[new_prefix]
             self._add_code(new_prefix + byte)
             new_prefix = byte
 
             yield encoded
-        
+
         self._buffer = new_prefix
 
-
-
-
     def _clear_codes(self):
-        self._prefixes = dict( (struct.pack("B", codept), codept) for codept in range(256) )
-        self._prefixes[ CLEAR_CODE ] = CLEAR_CODE
-        self._prefixes[ END_OF_INFO_CODE ] = END_OF_INFO_CODE
-
+        self._prefixes = dict((struct.pack("B", codept), codept)
+                              for codept in range(256))
+        self._prefixes[CLEAR_CODE] = CLEAR_CODE
+        self._prefixes[END_OF_INFO_CODE] = END_OF_INFO_CODE
 
     def _add_code(self, newstring):
-        self._prefixes[ newstring ] = len(self._prefixes)
-
+        self._prefixes[newstring] = len(self._prefixes)
 
 
 class PagingEncoder(object):
@@ -277,22 +256,20 @@ class PagingEncoder(object):
         self._initial_code_size = initial_code_size
         self._max_code_size = max_code_size
 
-
     def encodepages(self, pages):
         for page in pages:
 
             encoder = Encoder(max_code_size=self._max_code_size)
             codepoints = encoder.encode(page)
-            codes_and_eoi = itertools.chain([ CLEAR_CODE ], codepoints, [ END_OF_INFO_CODE ])
+            codes_and_eoi = itertools.chain(
+                [CLEAR_CODE], codepoints, [END_OF_INFO_CODE])
 
             packer = BitPacker(initial_code_size=encoder.code_size())
             packed = packer.pack(codes_and_eoi)
 
-            for byte in packed: 
+            for byte in packed:
                 yield byte
 
-
-            
 
 class PagingDecoder(object):
 
@@ -314,7 +291,6 @@ class PagingDecoder(object):
 
         except StopIteration:
             pass
-        
 
     def decodepages(self, bytesource):
         unpacker = BitUnpacker(initial_code_size=self._initial_code_size)
@@ -323,31 +299,32 @@ class PagingDecoder(object):
         self._remains = codepoints
         while self._remains:
             nextpoints = self.next_page(self._remains)
-            nextpoints = [ nx for nx in nextpoints ]
+            nextpoints = [nx for nx in nextpoints]
 
             decoder = Decoder()
             decoded = decoder.decode(nextpoints)
-            decoded = [ dec for dec in decoded ]
+            decoded = [dec for dec in decoded]
 
             yield decoded
 
+
 def unpackbyte(b):
-   (ret,) = struct.unpack("B", b)
-   return ret
+    (ret,) = struct.unpack("B", b)
+    return ret
 
 
 def filebytes(fileobj, buffersize=1024):
     buff = fileobj.read(buffersize)
     while buff:
-        for byte in buff: yield byte
+        for byte in buff:
+            yield byte
         buff = fileobj.read(buffersize)
 
-    
+
 def readbytes(filename, buffersize=1024):
     with open(filename, "rb") as infile:
         for byte in filebytes(infile, buffersize):
             yield byte
-
 
 
 def bytestostr(bytesource):
@@ -355,7 +332,6 @@ def bytestostr(bytesource):
     for bt in bytesource:
         string += bytesource
     return string
-
 
 
 def writebytes(filename, bytesource):
@@ -374,8 +350,8 @@ def inttobits(anint, width=None):
     retreverse.reverse()
 
     ret = retreverse
-    if None != width:
-        ret_head = [ 0 ] * (width - len(ret))
+    if width is not None:
+        ret_head = [0] * (width - len(ret))
         ret = ret_head + ret
 
     return ret
@@ -383,11 +359,11 @@ def inttobits(anint, width=None):
 
 def intfrombits(bits):
     ret = 0
-    lsb_first = [ b for b in bits ]
+    lsb_first = [b for b in bits]
     lsb_first.reverse()
-    
+
     for bit_index in range(len(lsb_first)):
-        if lsb_first[ bit_index ]:
+        if lsb_first[bit_index]:
             ret = ret | (1 << bit_index)
 
     return ret
@@ -419,5 +395,6 @@ def bitstobytes(bits):
             nextbit = 7
             nextbyte = 0
 
-    if nextbit < 7: ret.append(nextbyte)
+    if nextbit < 7:
+        ret.append(nextbyte)
     return ret

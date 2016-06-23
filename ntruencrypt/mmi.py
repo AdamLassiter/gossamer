@@ -1,5 +1,6 @@
 from ring_polynomials import polynomial
 
+
 def inverse_modpn(f, pn):
     p, n = factorize(pn)
     g = inverse_modp(f, p)
@@ -8,15 +9,15 @@ def inverse_modpn(f, pn):
     q = p
     while q < pn:
         q **= 2
-        g *= 2-f*g
+        g *= 2 - f * g
         g %= q
     return g
-        
+
 
 def inverse_modp(f, p):
     N = len(f)
-    zero = lambda: polynomial([0 for n in range(N+1)])
     k = 0
+    zero = lambda: polynomial([0 for n in range(N + 1)])
     b, c, g = zero() + 1, zero(), zero()
     f = polynomial(f.c + [0])
     g[N], g[0] = 1, -1
@@ -29,7 +30,7 @@ def inverse_modp(f, p):
             if mod_inv(f[0], p) == 0:
                 return None
             ret = polynomial((mod_inv(f[0], p) * b)[:-1])
-            return ret << (N-k) % N
+            return ret << (N - k) % N
         if f.deg() < g.deg():
             f, g = g, f
             b, c = c, b
