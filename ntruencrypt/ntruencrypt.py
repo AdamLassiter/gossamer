@@ -1,8 +1,7 @@
 from random import randint
 from math import floor, ceil
 from convert import str_to_base, base_to_str
-from ring_polynomials import polynomial
-from mmi import inverse_modpn as inverse
+from ring_polynomials import ring_polynomial as polynomial
 
 
 def random_key(params):
@@ -24,8 +23,7 @@ def keygen(params):
     while True:
         f = random_key(params) * params["p"] + 1
         try:
-            # fq = polynomial(inverse(f.c, params["q"]))
-            fq = inverse(f, params["q"])
+            fq = f.inverse_modpn(params["q"])
             break
         except Exception as e:
             print e

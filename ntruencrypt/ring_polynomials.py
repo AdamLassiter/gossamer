@@ -1,21 +1,11 @@
-def inv(a, p):
-    def gcd(a, b):
-        if a == 0:
-            return b, 0, 1
-        else:
-            g, y, x = gcd(b % a, a)
-            return g, x - (b // a) * y, y
-    g, x, y = gcd(a % p, p)
-    if g != 1:
-        raise Exception("No inverse exists for %s %% %s" % (a, p))
-    else:
-        return x % p
+class ring_polynomial:
 
-
-class polynomial:
-
-    def __init__(self, coefficients):
-        self.c = coefficients
+    def __init__(self, coefficients=[], degree=0):
+        if degree and coefficients and len(coefficients) - 1 > degree:
+            raise ValueError("Degree too low for given coefficients.")
+        self.coeffs = [0 for n in range(degree + 1)]
+        if coefficients:
+            self.coeffs[:len(coefficients)] = coefficients
 
     def __str__(self):
         top_line = ""
@@ -37,32 +27,32 @@ class polynomial:
         return polynomial([0 for x in range(n)])
 
     def copy(self):
-        return polynomial([x for x in self.c])
+        return polynomial([x for x in self.coeffs])
 
     def __len__(self):
-        return len(self.c)
+        return len(self.coeffs)
 
     def __getitem__(self, index):
-        return self.c[index]
+        return self.coeffs[index]
 
     def __setitem__(self, index, value):
-        self.c[index] = value
+        self.coeffs[index] = value
 
     def __delitem__(self, index):
         del self[index]
 
     def __rshift__(self, n):
-        return polynomial(self.c[n:] + self.c[:n])
+        return polynomial(self.coeffs[n:] + self.coeffs[:n])
 
     def __lshift__(self, n):
-        return polynomial(self.c[-n:] + self.c[:-n])
+        return polynomial(self.coeffs[-n:] + self.coeffs[:-n])
 
     # TODO : Check gt function actually works
     def __gt__(self, other):
         if self.deg() != other.deg:
             return self.deg() > other.deg()
         else:
-            return self.highest() > other.highest()
+            return self.most_significant() > other.most_significant()
 
     def __lt__(self, other):
         return other > self
@@ -105,7 +95,7 @@ class polynomial:
         return self * other
 
     def __mod__(self, other):
-        new_c = [c % other for c in self.c]
+        new_c = [c % other for c in self.coeffs]
         return polynomial(new_c)
 
     def centerlift(self, p):
@@ -119,5 +109,63 @@ class polynomial:
                 return len(self) - i
         return 0
 
-    def highest(self):
+    def most_significant(self):
         self[self.deg()]
+
+    def inverse_modp(self, p):
+        # Find b s.t. ab = 1 mod p
+        def mod_inv(a, p):
+            def gcd(a, b):
+                if a == 0:
+                    return b, 0, 1
+                else:
+                    g, y, x = gcd(b % a, a)
+                    return g, x - (b // a) * y, y
+            g, x, y = gcd(a % p, p)
+            if g != 1:
+                return 0
+            else:
+                return x % p
+
+        N = len(self.coeffs)
+        k = 0
+        zero = lambda: polynomial(degree=N)
+        b, c, g = zero() + 1, zero(), zero()
+        f = polynomial(coefficients=self.coeffs, degree=N)
+        g[N], g[0] = 1, -1
+        while True:
+            while f[0] == 0 and f.deg() > 0:
+                f >>= 1
+                c <<= 1
+                k += 1
+            if f.deg() == 0:
+                if mod_inv(f[0], p) == 0:
+                    return None
+                ret = polynomial(coefficients=(mod_inv(f[0], p) * b)[:-1])
+                return ret << (N - k) % N
+            if f.deg() < g.deg():
+                f, g = g, f
+                b, c = c, b
+            u = f[0] * mod_inv(g[0], p)
+            f = (f - u * g) % p
+            b = (b - u * c) % p
+
+    def inverse_modpn(self, pn):
+        # Factorize p^n for some p, n
+        def factorize(n):
+            from math import log
+            i = 2
+            while n % i:
+                i += 1
+            return i, int(log(n, i))
+
+        p, n = factorize(pn)
+        g = self.inverse_modp(p)
+        if g is None:
+            return None
+        q = p
+        while q < pn:
+            q **= 2
+            g *= 2 - self * g
+            g %= q
+        return g
