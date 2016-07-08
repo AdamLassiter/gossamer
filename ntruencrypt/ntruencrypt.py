@@ -41,7 +41,7 @@ def encrypt(key, params, message):
         return e % params["q"]
     polys = [polynomial(x) for x in str_to_base(
         message, params["p"], params["N"])]
-    cipherpolys = [encrypt_p(key, params, poly).c for poly in polys]
+    cipherpolys = [encrypt_p(key, params, poly).coeffs for poly in polys]
     ciphertext = base_to_str(cipherpolys, params["q"])
     return ciphertext
 
@@ -56,7 +56,7 @@ def decrypt(key, params, ciphertext):
         return b
     polys = [polynomial(x) for x in str_to_base(
         ciphertext, params["q"], params["N"])]
-    plainpolys = [decrypt_p(key, params, poly).c for poly in polys]
+    plainpolys = [decrypt_p(key, params, poly).coeffs for poly in polys]
     plaintext = base_to_str(plainpolys, params["p"])
     return plaintext
 
@@ -64,7 +64,7 @@ def decrypt(key, params, ciphertext):
 if __name__ == "__main__":
     from parameters import k as K_PARAMS
     params = K_PARAMS[80]
-    m = "".join([chr(randint(97, 122)) for n in range(1 << 10)])
+    m = "".join([chr(randint(97, 122)) for n in range(1 << 5)])
     print "Using N=%(N)d, p=%(p)d, q=%(q)d" % params
     print "Message is %s" % ("'%s'" % m if len(m) < 1 << 7
                              else "long (%d)" % len(m))
@@ -75,3 +75,5 @@ if __name__ == "__main__":
     print "Decrypting..."
     c = decrypt(priv, params, e)
     print "Success!" if m == c else "Failure!"
+    print m
+    print c

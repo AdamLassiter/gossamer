@@ -24,7 +24,7 @@ class ring_polynomial:
         return top_line[:-2] + "\n" + bottom_line[:-2]
 
     def copy(self):
-        return polynomial([x for x in self.coeffs])
+        return ring_polynomial([x for x in self.coeffs])
 
     def __len__(self):
         return len(self.coeffs)
@@ -45,10 +45,10 @@ class ring_polynomial:
         del self[index]
 
     def __rshift__(self, n):
-        return polynomial(self.coeffs[n:] + self.coeffs[:n])
+        return ring_polynomial(self.coeffs[n:] + self.coeffs[:n])
 
     def __lshift__(self, n):
-        return self.rshift(-n)
+        return self >> -n
 
     # TODO : Check gt function actually works
     def __gt__(self, other):
@@ -62,16 +62,16 @@ class ring_polynomial:
 
     def __neg__(self):
         new_c = [-self[n] for n in range(len(self))]
-        return polynomial(new_c)
+        return ring_polynomial(new_c)
 
     def __add__(self, other):
-        if isinstance(other, polynomial):
+        if isinstance(other, ring_polynomial):
             assert len(self) == len(other)
             new_c = [x + y for x, y in zip(self[:], other[:])]
-            return polynomial(new_c)
+            return ring_polynomial(new_c)
         else:
             new_c = [self[0] + other] + self[1:]
-            return polynomial(new_c)
+            return ring_polynomial(new_c)
 
     def __radd__(self, other):
         return self + other
@@ -83,23 +83,23 @@ class ring_polynomial:
         return (-self) + other
 
     def __mul__(self, other):
-        if isinstance(other, polynomial):
+        if isinstance(other, ring_polynomial):
             assert len(self) == len(other)
             new_c = [0 for n in range(len(self))]
             for i in range(len(self)):
                 for j in range(len(self)):
                     new_c[(i + j) % len(self)] += self[i] * other[j]
-            return polynomial(new_c)
+            return ring_polynomial(new_c)
         else:
             new_c = [self[n] * other for n in range(len(self))]
-            return polynomial(new_c)
+            return ring_polynomial(new_c)
 
     def __rmul__(self, other):
         return self * other
 
     def __mod__(self, other):
         new_c = [c % other for c in self.coeffs]
-        return polynomial(new_c)
+        return ring_polynomial(new_c)
 
     def centerlift(self, p):
         for n in range(len(self)):
@@ -132,9 +132,9 @@ class ring_polynomial:
 
         N = len(self.coeffs)
         k = 0
-        b = c = g = ring_polynomial(degree=N)
+        b = c = g = ring_polynomial(degree=N + 1)
         b += 1
-        f = polynomial(coefficients=self.coeffs, degree=N)
+        f = ring_polynomial(coefficients=self.coeffs, degree=N + 1)
         g[N], g[0] = 1, -1
         while True:
             while f[0] == 0 and f.deg() > 0:
@@ -144,8 +144,7 @@ class ring_polynomial:
             if f.deg() == 0:
                 if mod_inv(f[0], p) == 0:
                     return None
-                ret = polynomial(coefficients=(mod_inv(f[0], p) * b)[:-1])
-                # return ret << (N - k) % N
+                ret = ring_polynomial(coefficients=(mod_inv(f[0], p) * b)[:-1])
                 return ret >> k % N  # Right-rotate is cleaner?
             if f.deg() < g.deg():
                 f, g = g, f
