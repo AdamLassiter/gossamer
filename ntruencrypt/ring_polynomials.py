@@ -23,9 +23,6 @@ class ring_polynomial:
                 top_line = top_line.replace("1", " ")
         return top_line[:-2] + "\n" + bottom_line[:-2]
 
-    def zero(n):
-        return polynomial([0 for x in range(n)])
-
     def copy(self):
         return polynomial([x for x in self.coeffs])
 
@@ -35,8 +32,14 @@ class ring_polynomial:
     def __getitem__(self, index):
         return self.coeffs[index]
 
+    def __getslice__(self, start, end):
+        return self.coeffs[start:end]
+
     def __setitem__(self, index, value):
         self.coeffs[index] = value
+
+    def __setslice__(self, start, end, value):
+        self.coeffs[start:end] = value
 
     def __delitem__(self, index):
         del self[index]
@@ -45,7 +48,7 @@ class ring_polynomial:
         return polynomial(self.coeffs[n:] + self.coeffs[:n])
 
     def __lshift__(self, n):
-        return polynomial(self.coeffs[-n:] + self.coeffs[:-n])
+        return self.rshift(-n)
 
     # TODO : Check gt function actually works
     def __gt__(self, other):
@@ -64,10 +67,10 @@ class ring_polynomial:
     def __add__(self, other):
         if isinstance(other, polynomial):
             assert len(self) == len(other)
-            new_c = [self[n] + other[n] for n in range(len(self))]
+            new_c = [x + y for x, y in zip(self[:], other[:])]
             return polynomial(new_c)
         else:
-            new_c = [self[0] + other] + [self[n] for n in range(1, len(self))]
+            new_c = [self[0] + other] + self[1:]
             return polynomial(new_c)
 
     def __radd__(self, other):
@@ -129,8 +132,8 @@ class ring_polynomial:
 
         N = len(self.coeffs)
         k = 0
-        zero = lambda: polynomial(degree=N)
-        b, c, g = zero() + 1, zero(), zero()
+        b = c = g = ring_polynomial(degree=N)
+        b += 1
         f = polynomial(coefficients=self.coeffs, degree=N)
         g[N], g[0] = 1, -1
         while True:
@@ -142,7 +145,7 @@ class ring_polynomial:
                 if mod_inv(f[0], p) == 0:
                     return None
                 ret = polynomial(coefficients=(mod_inv(f[0], p) * b)[:-1])
-                return ret << (N - k) % N
+                return ret << (N - k) % N  # Right-rotate is cleaner?
             if f.deg() < g.deg():
                 f, g = g, f
                 b, c = c, b
