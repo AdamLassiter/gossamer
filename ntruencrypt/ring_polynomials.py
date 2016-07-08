@@ -145,7 +145,8 @@ class ring_polynomial:
                 if mod_inv(f[0], p) == 0:
                     return None
                 ret = polynomial(coefficients=(mod_inv(f[0], p) * b)[:-1])
-                return ret << (N - k) % N  # Right-rotate is cleaner?
+                # return ret << (N - k) % N
+                return ret >> k % N  # Right-rotate is cleaner?
             if f.deg() < g.deg():
                 f, g = g, f
                 b, c = c, b
@@ -164,11 +165,9 @@ class ring_polynomial:
 
         p, n = factorize(pn)
         g = self.inverse_modp(p)
-        if g is None:
-            return None
-        q = p
-        while q < pn:
-            q **= 2
-            g *= 2 - self * g
-            g %= q
+        if g is not None:
+            while p < pn:
+                p **= 2
+                g *= 2 - self * g
+                g %= p
         return g
