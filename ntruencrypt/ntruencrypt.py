@@ -5,6 +5,7 @@ from ring_polynomials import ring_polynomial as polynomial
 
 
 def random_key(params):
+    # In need of improvement to meet spec, see ./params.pdf
     k = [0 for n in range(params["N"])]
     d1, d2 = params["d"], params["d"] - 1
     while d1:
@@ -27,7 +28,6 @@ def keygen(params):
             break
         except Exception as e:
             print e
-            pass
     g = random_key(params)
     h = (fq * g * params["p"]) % params["q"]
     return f, h

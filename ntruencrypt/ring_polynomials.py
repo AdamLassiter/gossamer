@@ -1,7 +1,7 @@
 class ring_polynomial:
 
     def __init__(self, coefficients=[], degree=0):
-        if degree and coefficients and len(coefficients) - 1 > degree:
+        if degree and coefficients and len(coefficients) > degree + 1:
             raise ValueError("Degree too low for given coefficients.")
         self.coeffs = [0 for n in range(degree + 1)]
         if coefficients:
@@ -130,7 +130,7 @@ class ring_polynomial:
             else:
                 return x % p
 
-        N = len(self.coeffs)
+        N = len(self.coeffs) - 1
         k = 0
         b = c = g = ring_polynomial(degree=N + 1)
         b += 1
@@ -170,3 +170,8 @@ class ring_polynomial:
                 g *= 2 - self * g
                 g %= p
         return g
+
+
+if __name__ == "__main__":
+    f = ring_polynomial([-1, 1, 1, 0, -1, 0, 1, 0, 0, 1, -1])
+    print f.inverse_modp(3)

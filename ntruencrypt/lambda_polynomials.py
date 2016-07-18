@@ -13,12 +13,12 @@ lshift = lambda p, n: p[n:] + p[:n]
 rshift = lambda p, n: lshift(p, -n)
 
 hi_term = lambda p: p[-1] if p[-1] else hi_term(p[:-1])
-degree = lambda p: len(p) - 1
-order = lambda p: order(p[:-1]) if p[-1] == 0 else degree(p)
-greater = lambda p, q: order(p) > order(q) if order(p) != order(q) else hi_term(p) > hi_term(q)
+order = lambda p: len(p) - 1
+degree = lambda p: degree(p[:-1]) if p[-1] == 0 else order(p)
+greater = lambda p, q: degree(p) > degree(q) if degree(p) != degree(q) else hi_term(p) > hi_term(q)
 cntrlft = lambda p, n: map(lambda x: x - n if x > n / 2. else x, p)
 
-sadd = lambda p, y: map(lambda x, y: x + y, p, [y] + [0] * degree(p))
+sadd = lambda p, y: map(lambda x, y: x + y, p, [y] + [0] * order(p))
 smul = lambda p, y: map(lambda x: x * y, p)
 smod = lambda p, y: map(lambda x: x % y, p)
 neg = lambda p: smul(p, -1)
@@ -42,12 +42,12 @@ def inv_modp(F, p):
     f = F + [0]
     g = sadd(lshift(sadd(c, 1), 1), -1)
     while True:
-        while order(f) and not f[0]:
+        while degree(f) and not f[0]:
             f, c = lshift(f, 1), rshift(c, 1)
             k += 1
-        if not order(f):
+        if not degree(f):
             return lshift(smul(b, inv(f[0], p))[:-1], k % N) if inv(f[0], p) else None
-        if order(f) < order(g):
+        if degree(f) < degree(g):
             f, g, b, c = g, f, c, b
         u = f[0] * inv(g[0], p)
         f = smod(vsub(f, smul(g, u)), p)
