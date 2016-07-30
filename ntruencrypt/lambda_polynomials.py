@@ -15,7 +15,6 @@ rshift = lambda p, n: lshift(p, -n)
 hi_term = lambda p: p[-1] if p[-1] else hi_term(p[:-1])
 order = lambda p: len(p) - 1
 degree = lambda p: degree(p[:-1]) if p[-1] == 0 else order(p)
-greater = lambda p, q: degree(p) > degree(q) if degree(p) != degree(q) else hi_term(p) > hi_term(q)
 cntrlft = lambda p, n: map(lambda x: x - n if x > n / 2. else x, p)
 
 sadd = lambda p, y: map(lambda x, y: x + y, p, [y] + [0] * order(p))
