@@ -47,43 +47,53 @@ class SecureChannel:
         self.dominant = dominant
         self.msg_generator = None
 
-    @accepts(str)
+    @accepts(SecureChannel, str)
     def send(self, message):
         data = self.msg_generator.construct(message)
-        self.channel.send(data)
+        self.__send(data)
+
+    @accepts(SecureChannel, str)
+    def __send(self, message):
+        self.channel.send(message)
 
     @returns(str)
     def recv(self):
         if self.msg_generator:
-            data = self.channel.recv()
+            data = self.__recv()
             return self.msg_generator.deconstruct(data)
         else:
             raise Exception()
 
+    @returns(str)
+    def __recv(self):
+        return self.channel.recv()
+
     def connect(self):
+        # Initialise crypto objects
         symmetric = crypto.SymmetricEncryption(strength=AES_STRENGTH)
         private = crypto.AsymmetricEncryption(strength=RSA_STRENGTH)
         signature = crypto.Signature(key=self.signature)
         padding = crypto.SaltedPadding(padding_width=PADDING_WIDTH)
         hashchain = crypto.HashChain()
+        # Either send or reci\eve first
         if self.dominant:
-            self.channel.send(str(private))
+            self.__send(str(private))
             public = crypto.AsymmetricEncryption(
-                key=private.encrypt(self.channel.recv()))
-            self.channel.send(public.decrypt(private.encrypt(str(symmetric))))
-            self.channel.send(symmetric.encrypt(str(signature)))
+                key=private.encrypt(self.__recv()))
+            self.__send(public.decrypt(private.encrypt(str(symmetric))))
+            self.__send(symmetric.encrypt(str(signature)))
             other_sig = crypto.Signature(
-                kry=symmetric.decrypt(self.channel.recv()))
+                kry=symmetric.decrypt(self.__recv()))
         else:
-            public = crypto.AsymmetricEncryption(key=self.channel.recv())
+            public = crypto.AsymmetricEncryption(key=self.__recv())
             self.channel.send(public.decrypt(str(private)))
-            key = public.decrypt(private.encrypt(self.channel.recv()))
+            key = public.decrypt(private.encrypt(self.__recv()))
             symmetric = crypto.SymmetricEncryption(key=key)
             other_sig = crypto.Signature(
-                key=symmetric.decrypt(self.channel.recv()))
-            self.channel.send(symmetric.encrypt(str(signature)))
-        self.msg_generator = MessageGenerator(
-            symmetric, signature, other_sig, padding, hashchain)
+                key=symmetric.decrypt(self.__recv()))
+            self.__send(symmetric.encrypt(str(signature)))
+        self.msg_generator = MessageGenerator(symmetric, signature, other_sig,
+                                              padding, hashchain)
 
 
 class MessageGenerator:

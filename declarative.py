@@ -19,9 +19,6 @@ def accepts(*types, **kwtypes):
         def type(obj):
             return obj.__class__
 
-        def is_subset(subset, superset):
-            return all(item in superset.items() for item in subset.items())
-
         # Does this work?
         # Else, 'reduce(lambda a, b: a & b, map(isinstance, args, arg_types))'
         # Don't know about **kwargs, filter?
@@ -29,8 +26,8 @@ def accepts(*types, **kwtypes):
         def wrapper(*args, **kwargs):
             if strength is not NONE:
                 arg_types = tuple(map(type, args))
-                kwarg_types = dict([(k, type(v)) for k, v in kwargs.items()])
-                if arg_types != types or not is_subset(kwarg_types, kwtypes):
+                kwarg_types = set(kwargs.items())
+                if arg_types != types or set(kwargs.items()) not in set(kwarg_types.items()):
                     called_types = arg_types + \
                         tuple(["%s=%s" % kv for kv in kwarg_types.items()])
                     msg = info(func, "called with", called_types, types)
@@ -38,7 +35,7 @@ def accepts(*types, **kwtypes):
                         print >> stderr, "Warning: ", msg
                     elif strength is STRONG:
                         raise TypeError(msg)
-            return func(*args)
+            return func(*args, **kwargs)
 
         return wrapper
 
@@ -50,7 +47,7 @@ def accepts(*types, **kwtypes):
     return arg_checked
 
 
-def returns(*types):
+def returns(*types, **kwtypes):
 
     def ret_checked(func):
 
