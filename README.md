@@ -1,21 +1,38 @@
-# gossamer
-Web-like chat network
-------------------------------------------
+# Gossamer
 
-starting 'seed' / server
+## Introduction
+A distributed web-like network transfer system that aims to provide security through a range of encryption schemes and anonymity through a Tor-like network.
 
-each client connects to a number of other clients
+## Modules
+### Gossamer
+* Provides classes to create a webbed graph of clients grown from an initial 'seed' node
+* Also provides a simple Tor-like networking system with onion messages sent along random paths
 
-send <address>|<     encrypted     >
+_The Gossamer network aims to provide anonymity by disclosing addresses only to chosen neighbour nodes_
+
+### NTRUEncrypt
+* Provides a pure-python implementation of the NTRUEncrypt algorithm
+* Should eventually allow for homomorphic functions to be applied to the scheme
+
+### SHA3-Keccak
+* Should eventually provide a pure-python Keccak implementation
+
+### AES
+* Should eventually provide a pure-python AES implementation
+
+## Specifics
+Each client connects to a number of other clients
+
+Send <address>|<     encrypted     >
                <address>|<encrypted>
 	etc... onion routing
 
+Seed stores public key and username, client stores private key
+Seed verifies on client joining
 
-seed stores public key and username, client stores private key
-seed verifies on client joining
+Clients store only nicknames and direction
 
-clients store only nicknames and direction
+Network-wide encryption layer using server's key
+Each node has induvidual encryption key
+Vote new users in using secret-sharing
 
-network-wide encryption layer using server's key
-each node has induvidual encryption key
-vote new users in
