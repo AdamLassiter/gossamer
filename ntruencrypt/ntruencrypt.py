@@ -3,6 +3,8 @@ from math import floor, ceil
 from convert import str_to_base, base_to_str
 from polynomials import Polynomial
 
+# TODO: OOP this module, containing the parameters and keys in seperate classes
+
 
 def random_key(params):
     # In need of improvement to meet spec, see ./params.pdf
@@ -60,10 +62,5 @@ def decrypt(key, params, ciphertext):
 
 
 if __name__ == "__main__":
-    from parameters import k as K_PARAMS
-    params = K_PARAMS[80]
-    m = "".join([chr(randint(97, 122)) for n in range(1 << 5)])
-    priv, pub = keygen(params)
-    e = encrypt(pub, params, m)
-    c = decrypt(priv, params, e)
-    print "Pass" if m == c else "Fail"
+    import tests
+    tests.run()
