@@ -4,7 +4,8 @@ import keccak
 triggers = ('MD', 'Squeezed')
 longinp = 'Text'
 
-def process_kat_short(mkhasher, Len, Msg, MD = None, Squeezed = None):
+
+def process_kat_short(mkhasher, Len, Msg, MD=None, Squeezed=None):
     Len = int(Len)
     Msg = Msg.decode('hex')
     if MD:
@@ -14,7 +15,7 @@ def process_kat_short(mkhasher, Len, Msg, MD = None, Squeezed = None):
     if Len % 8:
         # print 'Length %d is not byte-aligned, skipping test vector' % Len
         return
-    
+
     h = mkhasher()
     h.update(Msg[:Len / 8])
     if MD:
@@ -22,17 +23,18 @@ def process_kat_short(mkhasher, Len, Msg, MD = None, Squeezed = None):
     else:
         assert Squeezed.startswith(h.digest())
 
-def process_kat_long(mkhasher, Text, Repeat, MD = None, Squeezed = None):
+
+def process_kat_long(mkhasher, Text, Repeat, MD=None, Squeezed=None):
     if MD:
         MD = MD.decode('hex')
     else:
         Squeezed = Squeezed.decode('hex')
     Repeat = int(Repeat)
-    
+
     mul = 64
     assert Repeat % mul == 0
     Text *= mul
-    
+
     h = mkhasher()
     for i in range(Repeat / mul):
         h.update(Text)
@@ -41,6 +43,7 @@ def process_kat_long(mkhasher, Text, Repeat, MD = None, Squeezed = None):
     else:
         assert Squeezed.startswith(h.digest())
 
+
 def process_katfile(fn, mkhasher):
     data = {}
     for f in open(fn):
@@ -48,13 +51,14 @@ def process_katfile(fn, mkhasher):
             continue
         lhs, rhs = f.strip().split(' = ', 1)
         data[lhs] = rhs
-        
+
         if lhs in triggers:
             if longinp in data:
                 process_kat_long(mkhasher, **data)
             else:
                 process_kat_short(mkhasher, **data)
             data = {}
+
 
 def run_glob(pat, mkhasher):
     for g in glob.glob(pat):
