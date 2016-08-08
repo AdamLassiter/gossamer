@@ -23,9 +23,7 @@ _The Gossamer network aims to provide anonymity by disclosing addresses only to 
 ## Specifics
 Each client connects to a number of other clients
 
-Send <address>|<     encrypted     >
-               <address>|<encrypted>
-	etc... onion routing
+Send encr(addr, encr(addr, encr(... , msg)))
 
 Seed stores public key and username, client stores private key
 Seed verifies on client joining
@@ -33,6 +31,5 @@ Seed verifies on client joining
 Clients store only nicknames and direction
 
 Network-wide encryption layer using server's key
-Each node has induvidual encryption key
+Each node has individual encryption key
 Vote new users in using secret-sharing
-

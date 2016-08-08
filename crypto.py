@@ -41,9 +41,6 @@ class SymmetricEncryption:
     def __init__(self, strength=128, key=None):
         self.key = key if key else NewKey(strength >> 3)  # bits -> bytes
 
-    def __repr__(self):
-        return self.key
-
     def __str__(self):
         return self.key
 

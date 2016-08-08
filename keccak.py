@@ -13,11 +13,11 @@ RoundConstants = [
 ]
 
 RotationConstants = [
-    [0,   1, 62, 28, 27, ],
-    [36, 44,  6, 55, 20, ],
-    [3,  10, 43, 25, 39, ],
-    [41, 45, 15, 21,  8, ],
-    [18,  2, 61, 56, 14, ]
+    [0, 1, 62, 28, 27],
+    [36, 44, 6, 55, 20],
+    [3, 10, 43, 25, 39],
+    [41, 45, 15, 21, 8],
+    [18, 2, 61, 56, 14]
 ]
 
 Masks = [(1 << i) - 1 for i in range(65)]
@@ -335,4 +335,4 @@ Keccak512 = KeccakHash.preset(576, 1024, 512)
 
 if __name__ == '__main__':
     import tests
-    tests.run()
+    tests.test_keccak()
