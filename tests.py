@@ -1,8 +1,10 @@
 from random import randint
+from keccak import *
+from crypto import *
+from ntruencrypt import *
 
 
 def test_keccak():
-    from keccak import *
     pt = """023D91AC532601C7CA3942D62827566D9268BB4276FCAA1AE927693A6961652676D
             BA09219A01B3D5ADFA12547A946E78F3C5C62DD880B02D2EEEB4B96636529C6B011
             20B23EFC49CCFB36B8497CD19767B53710A636683BC5E0E5C9534CFC004691E87D1
@@ -18,23 +20,59 @@ def test_keccak():
     expect = '230620d710cf3ab835059e1aa170735db17cae74b345765ff02e8d89'
     h = Keccak224(pt).hexdigest()
     assert h == expect
-    print "test-keccak passed"
+    print 'test-keccak passed'
 
 
 def test_ntru():
-    from ntruencrypt import *
-    m1 = "".join([chr(randint(32, 255)) for _ in range(1 << 5)])
+    m1 = "".join([chr(randint(32, 127)) for _ in range(1 << 5)])
     c = NTRUEncrypt80()
     e = c.encrypt(m1)
     m2 = c.decrypt(e)
     assert m1 == m2
-    print "test-ntru passed"
+    print 'test-ntru passed'
+
+
+def test_crypto():
+
+    def test_hash():
+        m1 = ''.join([chr(randint(32, 127)) for _ in range(1 << 5)])
+        m2 = ''.join([chr(randint(32, 127)) for _ in range(1 << 5)])
+        h = Hash()
+        assert h.digest(m1) == h.digest(m1)
+        h_m1_xor_m2 = h.digest(''.join(chr(ord(a) ^ ord(b))
+                                       for a, b in zip(m1, m2)))
+        hm1_xor_hm2 = ''.join(chr(ord(a) ^ ord(b))
+                              for a, b in zip(*map(h.digest, (m1, m2))))
+        assert h_m1_xor_m2 != hm1_xor_hm2
+        print ' test-hash passed'
+
+    def test_symmetric():
+        msg = ''.join([chr(randint(32, 127)) for _ in range(1 << 5)])
+        symm = SymmetricEncryption()
+        assert msg == symm.decrypt(symm.encrypt(msg))
+        print ' test-symmetric passed'
+
+    def test_asymmetric():
+        msg = ''.join([chr(randint(32, 127)) for _ in range(1 << 5)])
+        asym = AsymmetricEncryption()
+        assert msg == asym.decrypt(asym.encrypt(msg))
+        print ' test-asymmetric passed'
+
+    def test_signature():
+        pass
+
+    test_hash()
+    test_symmetric()
+    test_asymmetric()
+    test_signature()
+    print 'test-crypto passed'
 
 
 def run():
     test_keccak()
     test_ntru()
-    print 'tests passed'
+    test_crypto()
+    print '\ntests passed'
 
 
 if __name__ == '__main__':
