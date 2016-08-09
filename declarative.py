@@ -19,23 +19,26 @@ def accepts(*types, **kwtypes):
         def type(obj):
             return obj.__class__
 
-        # Does this work?
-        # Else, 'reduce(lambda a, b: a & b, map(isinstance, args, arg_types))'
-        # Don't know about **kwargs, filter?
         @wraps(func)
         def wrapper(*args, **kwargs):
             if strength is not NONE:
+                if func.__name__ in dir(args[0]):
+                    self, args = args[:1], args[1:]
+                else:
+                    self = None
                 arg_types = tuple(map(type, args))
                 kwarg_types = set(kwargs.items())
-                if arg_types != types or set(kwargs.items()) not in set(kwarg_types.items()):
+                if arg_types != types or not kwarg_types.issubset(set(kwtypes.items())):
                     called_types = arg_types + \
-                        tuple(["%s=%s" % kv for kv in kwarg_types.items()])
+                        tuple(["%s=%s" % kv for kv in kwarg_types])
+                    expected_types = types + \
+                        tuple(["%s=%s" % kv for kv in kwtypes.items()])
                     msg = info(func, "called with", called_types, types)
                     if strength is WEAK:
                         print >> stderr, "Warning: ", msg
                     elif strength is STRONG:
                         raise TypeError(msg)
-            return func(*args, **kwargs)
+            return func(*(self + args if self else args), **kwargs)
 
         return wrapper
 
