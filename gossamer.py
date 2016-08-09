@@ -10,7 +10,7 @@ from declarative import accepts, returns
 
 class Node:
 
-    @ecceots(protocol.crypto.Signature)
+    @accepts(protocol.crypto.Signature)
     def __init__(self, signature):
         self.signature = signature
         self.addr_dir = AddressDirectory()
