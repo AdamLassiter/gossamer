@@ -10,19 +10,19 @@ from declarative import accepts, returns
 
 class Node:
 
-    @ecceots(Node, protocol.crypto.Signature)
+    @ecceots(protocol.crypto.Signature)
     def __init__(self, signature):
         self.signature = signature
         self.addr_dir = AddressDirectory()
 
-    @accepts(Node, Socket)
+    @accepts(Socket)
     @returns(SecureChannel)
     def connect(self, sock):
         secure_channel = SecureChannel(sock, self.signature, True)
         secure_channel.connect()
         return secure_channel
 
-    @accepts(Node, ServerSocket)
+    @accepts(ServerSocket)
     @returns(SecureChannel)
     def get_listener(self, sock):
         sock.listen(5)
@@ -34,26 +34,28 @@ class Node:
 
     @accepts(str, int)
     @returns(Socket)
+    @staticmethod
     def create_client(address, port):
         sock = Socket((address, port))
         return sock
 
     @accepts(str, int)
     @returns(ServerSocket)
+    @staticmethod
     def create_server(address, port):
         from socket import AF_INET, SOCK_STREAM
         sock = ServerSocket(AF_INET, SOCK_STREAM)
         sock.bind(address, port)
         return sock
 
-    @accetps(Node, str, str)
+    @accetps(str, str)
     def send(self, target, message):
         assert self.addr_dir.contains(target)
         user = self.addr_dir.get(target)
         channel = user.direction
         channel.send(message)
 
-    @accepts(Node, SecureChannel)
+    @accepts(SecureChannel)
     @returns(str, str)
     def recv(self, source):
         return "user", source.recv()
@@ -72,7 +74,7 @@ class User:
 
     # TODO: Test class
 
-    @accepts(User, protocol.crypto.Signature, int, SecureChannel)
+    @accepts(protocol.crypto.Signature, int, SecureChannel)
     def __init__(self, signature, distance, direction):
         self.signature = signature
         self.distance = distance
@@ -82,7 +84,7 @@ class User:
         # Signatures should be unique and constant
         return self.signature == other.signature
 
-    @accepts(User, int, SecureChannel)
+    @accepts(int, SecureChannel)
     def update(self, dist, dir):
         # Update with new distances and directions
         self.distance = self.distance if self.distance < dist else dist
@@ -98,7 +100,7 @@ class AddressDirectoy:
         # self.directory = {name:user}
         self.directory = {None: None}
 
-    @accepts(AddressDirectoy, User, str)
+    @accepts(User, str)
     def add(self, user, name=None):
         # Add a user with a specific signature to the directory
         # Presume they have just joined
@@ -109,7 +111,7 @@ class AddressDirectoy:
                             for i in range(8)])
         self.directory[name] = user
 
-    @accepts(AddressDirectoy, str)
+    @accepts(str)
     def remove(self, name):
         # Remove a user with specific signature from the directory
         # Presume they have quit
@@ -117,17 +119,17 @@ class AddressDirectoy:
             signature = self.directory[name]
             del self.directory[name]
 
-    @accepts(AddressDirectory, str)
+    @accepts(str)
     @returns(User)
     def get(self, name):
         return self.directory[name]
 
-    @accepts(AddressDirectoy, str)
+    @accepts(str)
     @returns(bool)
     def contains(self, name):
         return self.directory.contains(name)
 
-    @accepts(AddressDirectoy, str)
+    @accepts(str)
     def get_route_to(self, name):
         assert self.contains(name)
         pass

@@ -16,7 +16,7 @@ from declarative import accepts, returns
 @returns(str)
 def NewKey(length):
     # Uses Random
-    Random.new().read(length)
+    return Random.new().read(length)
 
 
 class Hash:
@@ -25,7 +25,7 @@ class Hash:
     def __init__(self):
         pass
 
-    @accepts(Hash, str, n=int)
+    @accepts(str, n=int)
     @returns(str)
     def digest(self, text, n=1024):
         hash_obj = SHA512.new(text)
@@ -37,21 +37,21 @@ class Hash:
 class SymmetricEncryption:
     # Uses AES in CFB block mode
 
-    @accepts(SymmetricEncryption, strength=int, key=str)
+    @accepts(strength=int, key=str)
     def __init__(self, strength=128, key=None):
         self.key = key if key else NewKey(strength >> 3)  # bits -> bytes
 
     def __str__(self):
         return self.key
 
-    @accepts(SymmetricEncryption, str)
+    @accepts(str)
     @returns(str)
     def encrypt(self, text):
         iv = NewKey(AES.block_size)
         cipher = AES.new(self.key, AES.MODE_CFB, iv)
         return iv + cipher.encrypt(text)
 
-    @accepts(SymmetricEncryption, str)
+    @accepts(str)
     @returns(str)
     def decrypt(self, text):
         iv, text = text[:AES.block_size], text[AES.block_size:]
@@ -62,7 +62,7 @@ class SymmetricEncryption:
 class AsymmetricEncryption:
     # Uses RSA
 
-    @accepts(AsymmetricEncryption, strength=int, key=str)
+    @accepts(strength=int, key=str)
     def __init__(self, strength=2048, key=None):
         self.key = RSA.importKey(key) if key else RSA.generate(strength)
 
@@ -72,12 +72,12 @@ class AsymmetricEncryption:
     def __str__(self):
         return self.key.publickey().exportKey()
 
-    @accepts(AsymmetricEncryption, str)
+    @accepts(str)
     @returns(str)
     def encrypt(self, text):
         return self.key.encrypt(text, "")[0]
 
-    @accepts(AsymmetricEncryption, str)
+    @accepts(str)
     @returns(str)
     def decrypt(self, text):
         return self.key.decrypt(text)
@@ -86,13 +86,13 @@ class AsymmetricEncryption:
 class SaltedPadding:
     # Uses NewKey
 
-    @accepts(SaltedPadding, padding_width=int, control_char=int)
+    @accepts(padding_width=int, control_char=int)
     def __init__(self, padding_width=32, control_char=255):
         self.padding_width = padding_width
         self.control_char = chr(control_char)
         self.control_ord = control_char
 
-    @accepts(SaltedPadding, str)
+    @accepts(str)
     @returns(str)
     def pad(self, text):
         assert self.padding_width - len(text) > 0
@@ -102,7 +102,7 @@ class SaltedPadding:
             (self.control_ord + 1) % 256))
         return text + salt
 
-    @accepts(SaltedPadding, str)
+    @accepts(str)
     @returns(str)
     def unpad(self, text):
         assert len(text) == self.padding_width
@@ -113,7 +113,7 @@ class SaltedPadding:
 class Signature:
     # Uses AsymmetricEncryption
 
-    @accepts(Signature, int, str)
+    @accepts(int, str)
     def __init__(self, strength=2048, key=None):
         self.key = AsymmetricEncryption(strength=strength, key=key)
 
@@ -126,12 +126,12 @@ class Signature:
     def __eq__(self, other):
         return str(self) == str(other)
 
-    @accepts(Signature, str)
+    @accepts(str)
     @returns(str)
     def sign(self, text):
         return self.key.encrypt(Hash().digest(text))
 
-    @accepts(Signature, str, str)
+    @accepts(str, str)
     @returns(bool)
     def verify(self, signature, text):
         return self.key.decrypt(signature) == Hash().digest(text)
@@ -153,7 +153,7 @@ class HashChain:
         self.my_new_hash = Hash().digest(self.my_new_raw)
         return self.my_old_raw + self.my_new_hash
 
-    @accepts(HashChain, str)
+    @accepts(str)
     @returns(bool)
     def verify(self, hashes):
         if self.your_hash:
@@ -164,3 +164,7 @@ class HashChain:
             ret = False
         self.your_hash = your_hash
         return ret
+
+if __name__ == '__main__':
+    import tests
+    tests.test_crypto()

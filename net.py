@@ -17,11 +17,11 @@ class DumbChannel:
     # Will automatically detect length (unsigned long long = 18k TB)
     # Should be buffered, currently isn't
 
-    @accepts(DumbChannel, socket)
+    @accepts(socket)
     def __init__(self, sock):
         self.sock = sock
 
-    @accepts(DumbChannel, str)
+    @accepts(str)
     def send(self, text):
         int_len = len(data)
         str_len = pack("Q", int_len)
@@ -40,19 +40,19 @@ class DumbChannel:
 class SecureChannel:
     # Used for sending message objects, manages client-server connection etc...
 
-    @accepts(SecureChannel, socket, crypto.Signature, dominant=bool)
+    @accepts(socket, crypto.Signature, dominant=bool)
     def __init__(self, sock, signature, dominant=False):
         self.channel = DumbChannel(sock)
         self.signature = signature
         self.dominant = dominant
         self.msg_generator = None
 
-    @accepts(SecureChannel, str)
+    @accepts(str)
     def send(self, message):
         data = self.msg_generator.construct(message)
         self.__send(data)
 
-    @accepts(SecureChannel, str)
+    @accepts(str)
     def __send(self, message):
         self.channel.send(message)
 
@@ -106,7 +106,7 @@ class MessageGenerator:
     Each block is preceeded by its length
     """
 
-    @accepts(MessageGenerator, crypto.SymmetricEncryption, crypto.Signature,
+    @accepts(crypto.SymmetricEncryption, crypto.Signature,
              crypto.Signature, crypto.SaltedPadding, crypto.HashChain)
     def __init__(self, symmetric, self_sig, other_sig, padding, hashchain):
         self.symmetric = symmetric
@@ -115,7 +115,7 @@ class MessageGenerator:
         self.padding = padding
         self.hashchain = hashchain
 
-    @accepts(MessageGenerator, str)
+    @accepts(str)
     @returns(str)
     def construct(self, text):
         def add_block(text, data):
@@ -128,7 +128,7 @@ class MessageGenerator:
         encrypted = self.symmetric.encrypt(message[0])      # Encrypted message
         return encrypted
 
-    @accepts(MessageGenerator, str)
+    @accepts(str)
     @returns(str)
     def deconstruct(self, encrypted):
         def rem_block(text):
