@@ -41,14 +41,14 @@ def join(padded_lists):
     return unpadded_list
 
 
-def str_to_base(string, base, N):
+def str2base(string, base, N):
     """
     Converts a string to a list of ints in a given base
     """
     return split(base_convert(list(bytearray(string)), 256, base), N)
 
 
-def base_to_str(lists, base):
+def base2str(lists, base):
     """
     Converts a list of ints in a given base to a string
     """
@@ -227,10 +227,10 @@ class NTRUCipher(object):
             r = self.random_poly(self.params)
             e = r * self.key['pub'] + poly
             return e % self.params['q']
-        polys = [NTRUPolynomial(x) for x in str_to_base(
+        polys = [NTRUPolynomial(x) for x in str2base(
             text, self.params['p'], self.params['N'])]
         cipherpolys = map(encrypt_p, polys)
-        ciphertext = base_to_str(cipherpolys, self.params['q'])
+        ciphertext = base2str(cipherpolys, self.params['q'])
         return ciphertext
 
     def decrypt(self, text):
@@ -243,10 +243,10 @@ class NTRUCipher(object):
             b = a % self.params['p']
             b = b.centerlift(self.params['p'])
             return b
-        polys = [NTRUPolynomial(x) for x in str_to_base(
+        polys = [NTRUPolynomial(x) for x in str2base(
             text, self.params['q'], self.params['N'])]
         plainpolys = map(decrypt_p, polys)
-        plaintext = base_to_str(plainpolys, self.params['p'])
+        plaintext = base2str(plainpolys, self.params['p'])
         return plaintext
 
     @staticmethod
