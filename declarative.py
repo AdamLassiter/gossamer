@@ -27,7 +27,7 @@ def accepts(*types, **kwtypes):
                 else:
                     self = None
                 arg_types = tuple(map(type, args))
-                kwarg_types = set(kwargs.items())
+                kwarg_types = set(map(lambda kv: (kv[0], type(kv[1])), kwargs.items()))
                 if arg_types != types or not kwarg_types.issubset(set(kwtypes.items())):
                     called_types = arg_types + \
                         tuple(["%s=%s" % kv for kv in kwarg_types])
