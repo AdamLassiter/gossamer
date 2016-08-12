@@ -38,7 +38,7 @@ class SymmetricEncryption:
     # Uses AES in CFB block mode
 
     @accepts(strength=int, key=str)
-    def __init__(self, strength=128, key=None):
+    def __init__(self, strength=128, key=""):
         self.key = key if key else NewKey(strength >> 3)  # bits -> bytes
 
     def __str__(self):
@@ -63,7 +63,7 @@ class AsymmetricEncryption:
     # Uses RSA
 
     @accepts(strength=int, key=str)
-    def __init__(self, strength=2048, key=None):
+    def __init__(self, strength=2048, key=""):
         self.key = RSA.importKey(key) if key else RSA.generate(strength)
 
     def __repr__(self):
@@ -113,8 +113,8 @@ class SaltedPadding:
 class Signature:
     # Uses AsymmetricEncryption
 
-    @accepts(int, str)
-    def __init__(self, strength=2048, key=None):
+    @accepts(strength=int, key=str)
+    def __init__(self, strength=2048, key=""):
         self.key = AsymmetricEncryption(strength=strength, key=key)
 
     def __repr__(self):
