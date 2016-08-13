@@ -74,13 +74,41 @@ def test_crypto():
 
 
 def test_net():
-    pass
+    from socket import socket as ssocket, create_connection as socket, AF_INET, SOCK_STREAM
+    from time import sleep
+    from net import DumbChannel
+    from concurrency import threaded
+
+    @threaded
+    def run_server(addr, msg):
+        ssock = ssocket(AF_INET, SOCK_STREAM)
+        ssock.bind(addr)
+        ssock.listen(1)
+        chan = DumbChannel(ssock.accept()[0])
+        chan.send(msg)
+        chan.sock.close()
+
+    def test_client(addr, msg):
+        sock = socket(addr)
+        chan = DumbChannel(sock)
+        assert msg == chan.recv()
+        chan.sock.close()
+
+    # FIXME: SecurreChannel does not like connecting :(
+
+    addr = ('localhost', 4994)
+    msg = ''.join([chr(randint(32, 127)) for _ in range(1 << 3)])
+    run_server(addr, msg)
+    sleep(1)
+    test_client(addr, msg)
+    print 'test-net passed'
 
 
 def run():
     test_keccak()
-    test_ntru()
+    # test_ntru()
     test_crypto()
+    test_net()
     print '\ntests passed'
 
 

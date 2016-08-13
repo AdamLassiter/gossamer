@@ -4,7 +4,7 @@ import crypto
 
 from declarative import accepts, returns
 
-# TODO: Test module
+# TODO: Add create_sock to module?
 
 
 AES_STRENGTH = 1 << 7
@@ -13,7 +13,7 @@ PADDING_WIDTH = 1 << 5
 
 
 class DumbChannel:
-    # Managed socket for sending / receiving pure data
+    # Managed socket for sending / receiving plain data
     # Will automatically detect length (unsigned long long = 18k TB)
     # Should be buffered, currently isn't
 
@@ -23,10 +23,10 @@ class DumbChannel:
 
     @accepts(str)
     def send(self, text):
-        int_len = len(data)
+        int_len = len(text)
         str_len = pack("Q", int_len)
-        self.sock.sendall(str_len)
-        self.sock.sendall(data)
+        self.sock.send(str_len)
+        self.sock.send(text)
 
     @returns(str)
     def recv(self):
@@ -40,8 +40,8 @@ class DumbChannel:
 class SecureChannel:
     # Used for sending message objects, manages client-server connection etc...
 
-    @accepts(socket, crypto.Signature, dominant=bool)
-    def __init__(self, sock, signature, dominant=False):
+    @accepts(socket, signature=str, dominant=bool)
+    def __init__(self, sock, signature="", dominant=False):
         self.channel = DumbChannel(sock)
         self.signature = signature
         self.dominant = dominant
@@ -52,7 +52,6 @@ class SecureChannel:
         data = self.msg_generator.construct(message)
         self.__send(data)
 
-    @accepts(str)
     def __send(self, message):
         self.channel.send(message)
 
@@ -64,7 +63,6 @@ class SecureChannel:
         else:
             raise Exception()
 
-    @returns(str)
     def __recv(self):
         return self.channel.recv()
 
@@ -141,3 +139,7 @@ class MessageGenerator:
         self.other_sig.verify(rem_block(message), text)
         self.hashchain.verify(rem_block(message))
         return text
+
+if __name__ == '__main__':
+    import tests
+    tests.test_net()

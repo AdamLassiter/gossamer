@@ -137,5 +137,4 @@ class AddressDirectoy:
     @returns(list)
     def export(self):
         # Returns a list of str:User pairs
-        return [(name, user.signature)
-                for name, user in self.directory.items()]
+        return [(name, user.signature) for name, user in self.directory.items()]
