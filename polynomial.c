@@ -17,33 +17,23 @@ void prettyprint(polynomial p) {
 	printf("\n");
 }
 
-void lshift(polynomial p, int n, polynomial *o) {
-	void lshift_once_inplace(polynomial p) {
-		int tmp = p.coeffs[0];
-		for (int i = 0; i < p.len - 1; i++) {
-			p.coeffs[i] = p.coeffs[i + 1];
-		}
-		p.coeffs[p.len - 1] = tmp;
+void rshift(polynomial p, int n, polynomial *o) {
+	void reverse(int arr[], int start, int end) {
+		if (start >= end)
+	    	return;
+		int temp = arr[start];
+		arr[start] = arr[end];
+		arr[end] = temp;
+		reverse(arr, start+1, end-1);
 	}
-	memcpy(p.coeffs, o->coeffs, p.len * sizeof(int));
-	for (int i = 0; i < n; i++) {
-		lshift_once_inplace(*o);
-	}
+	memcpy(o->coeffs, p.coeffs, p.len*sizeof(int));
+	reverse(o->coeffs, 0, o->len - 1);
+	reverse(o->coeffs, 0, n - 1);
+	reverse(o->coeffs, n, o->len - 1);
 }
 
-void rshift(polynomial p, int n, polynomial *o) {
-	void rshift_once_inplace(polynomial p) {
-		int tmp = p.coeffs[p.len - 1];
-		for (int i = p.len - 1; i > 0; i--) {
-			p.coeffs[i] = p.coeffs[i - 1];
-		}
-		p.coeffs[0] = tmp;
-	}
-	memcpy(p.coeffs, o->coeffs, p.len * sizeof(int));
-	for (int i = 0; i < n; i++) {
-		rshift_once_inplace(*o);
-	}
-
+void lshift(polynomial p, int n, polynomial *o) {
+	rshift(p, p.len - n, o);
 }
 
 int degree(polynomial p) {
