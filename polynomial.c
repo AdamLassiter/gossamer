@@ -184,3 +184,22 @@ int main() {
 	v_mul(*f, *g, fg); s_mod(*fg, 3, fg);
 	prettyprint(*fg);
 }
+
+// #include <Python.h> //Don't need stdio, stdlib or string headers
+// static PyObject* lcs(PyObject* self, PyObject *args) {
+//     PyObject *py_tuple;
+//     int len;
+//     if (!PyArg_ParseTuple(args, "O", &py_tuple)) {
+//       return NULL;
+//     }
+//     len = PyTuple_Size(py_tuple);
+//     int *c_array = malloc(len * sizeof(int));
+//     while (len--) {
+//         c_array[len] = (int) PyInt_AsLong(PyTuple_GetItem(py_tuple, len));
+//     }
+// }
+//
+// result = PyList_New(p.len);
+// for(int i = 0; i < p.len; i++) {
+//     PyList_SetItem(result, i, PyInt_FromLong(p.coeffs[i]));
+// }
