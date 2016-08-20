@@ -1,7 +1,8 @@
 import gossamer
 
-# TODO:90 Test io class
-# TODO:20 Finish Program code
+# TODO:90 issue:2 Test io class
+# TODO:20 issue:1 Finish Program code
+# This is hideous
 
 
 class io:
