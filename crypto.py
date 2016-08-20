@@ -5,10 +5,10 @@ from Crypto.Cipher import AES
 
 from declarative import accepts, returns
 
-# TODO: Extract necessary pyCrypto modules to local folder?
-# TODO: SHA2 / SHA3 choice
-# TODO: RSA / NTRUEncrypt choice
-# IDEA: Symmetric algo. choice?
+# TODO:10 Extract necessary pyCrypto modules to local folder?
+# TODO:50 SHA2 / SHA3 choice
+# TODO:40 RSA / NTRUEncrypt choice
+# IDEA:0 Symmetric algo. choice?
 
 
 @accepts(int)

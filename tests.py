@@ -94,7 +94,7 @@ def test_net():
         assert msg == chan.recv()
         chan.sock.close()
 
-    # FIXME: SecurreChannel does not like connecting :(
+    # FIXME:10 SecurreChannel does not like connecting :(
 
     addr = ('localhost', 4994)
     msg = ''.join([chr(randint(32, 127)) for _ in range(1 << 3)])

@@ -4,7 +4,7 @@ import crypto
 
 from declarative import accepts, returns
 
-# TODO: Add create_sock to module?
+# TODO:0 Add create_sock to module?
 
 
 AES_STRENGTH = 1 << 7

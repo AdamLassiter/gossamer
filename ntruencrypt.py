@@ -52,7 +52,7 @@ def base2str(lists, base):
     """
     Converts a list of ints in a given base to a string
     """
-    # FIXME: Will strip trailing null-characters
+    # FIXME:20 Will strip trailing null-characters
     return str(bytearray(base_convert(join(lists), base, 256)))
 
 
@@ -254,8 +254,8 @@ class NTRUCipher(object):
         p  - Prime modulus for polynomial ring
         q  - Prime-power modulus for polynomial ring
         """
-        # FIXME: Obsolete since Sept. 2015, see ./params.pdf
-        # TODO: Should actually check against Hw
+        # FIXME:0 Obsolete since Sept. 2015, see ./params.pdf
+        # TODO:60 Should actually check against Hw
         def create(keypair=None):
             layout = ['N', 'd', 'Hw', 'p', 'q']
             c = NTRUCipher(dict(zip(layout, (N, d, Hw, p, q))), keypair)
