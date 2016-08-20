@@ -159,17 +159,12 @@ class NTRUPolynomial(tuple):
         """
         def factorise_pn(pn):
             p = 2
-            n = 0
             while pn % p:
                 p += 1
-            while pn > 1:
-                pn /= p
-                n += 1
-            return p, n
+            return p
 
-        p, n = factorise_pn(pn)
+        p = factorise_pn(pn)
         g = self.inverse_modp(p)
-        pn = p ** n
         if g is not None:
             while p < pn:
                 p **= 2
