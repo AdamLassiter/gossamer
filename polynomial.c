@@ -1,6 +1,4 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include <Python.h> // includes stdio.h, stdlib.h, string.h
 #define order(p) p.len - 1
 #define mod(a, b) ((b + (a % b)) % b)
 #define true 1
@@ -230,21 +228,30 @@ int main() {
 	prettyprint(*fg);
 }
 
-// #include <Python.h> //Don't need stdio, stdlib or string headers
-// static PyObject* lcs(PyObject* self, PyObject *args) {
-//     PyObject *py_tuple;
-//     int len;
-//     if (!PyArg_ParseTuple(args, "O", &py_tuple)) {
-//       return NULL;
-//     }
-//     len = PyTuple_Size(py_tuple);
-//     int *c_array = malloc(len * sizeof(int));
-//     while (len --) {
-//         c_array[len] = (int) PyInt_AsLong(PyTuple_GetItem(py_tuple, len));
-//     }
-// }
-//
-// result = PyList_New(p.len);
-// for(int i = 0; i < p.len; i ++) {
-//     PyList_SetItem(result, i, PyInt_FromLong(p.coeffs[i]));
-// }
+
+polynomial get_PyTuple(PyObject *args) {
+    PyObject *py_tuple;
+    int len;
+	polynomial ret;
+    if (!PyArg_ParseTuple(args, "O", &py_tuple)) {
+		ret.coeffs = NULL;
+		ret.len = 0;
+    } else {
+	    len = PyTuple_Size(py_tuple);
+		ret.len = len;
+	    ret.coeffs = malloc(len * sizeof(int));
+	    while (len --) {
+	        ret.coeffs[len] = (int) PyInt_AsLong(PyTuple_GetItem(py_tuple, len));
+	    }
+	}
+	return ret;
+}
+
+
+PyObject *set_PyTuple(polynomial p) {
+	PyObject *result = PyTuple_New(p.len);
+	for(int i = 0; i < p.len; i ++) {
+		PyList_SetItem(result, i, PyInt_FromLong(p.coeffs[i]));
+	}
+	return result;
+}
