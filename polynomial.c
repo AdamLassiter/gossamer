@@ -10,12 +10,14 @@ typedef struct polynomial {
 	int *coeffs;
 } polynomial;
 
+
 void prettyprint(polynomial p) {
-	for (int i = 0; i < p.len; i++) {
+	for (int i = 0; i < p.len; i ++) {
 		printf("%d ", p.coeffs[i]);
 	}
 	printf("\n");
 }
+
 
 void rshift(polynomial p, int n, polynomial *o) {
 	void reverse(int arr[], int start, int end) {
@@ -32,67 +34,79 @@ void rshift(polynomial p, int n, polynomial *o) {
 	reverse(o->coeffs, n, o->len - 1);
 }
 
+
 void lshift(polynomial p, int n, polynomial *o) {
 	rshift(p, p.len - n, o);
 }
 
+
 int degree(polynomial p) {
 	if (p.coeffs[order(p)] == 0) {
-		p.len--;
+		p.len --;
 		return degree(p);
 	} else {
 		return order(p);
 	}
 }
 
+
 void centerlift(polynomial p, int n, polynomial *o) {
-	for (int i = 0; i < p.len; i++) {
+	for (int i = 0; i < p.len; i ++) {
 		o->coeffs[i] = p.coeffs[i] > (float)(n / 2.) ? p.coeffs[i] - n : p.coeffs[i];
 	}
 }
 
+
 void s_add(polynomial p, int x, polynomial *o) {
-	for (int i = 0; i < p.len; i++) {
+	for (int i = 0; i < p.len; i ++) {
 		o->coeffs[i] = p.coeffs[i];
 	}
 	o->coeffs[0] += x;
 }
 
+
 void s_mul(polynomial p, int x, polynomial *o) {
-	for (int i = 0; i < p.len; i++) {
+	for (int i = 0; i < p.len; i ++) {
 		o->coeffs[i] = p.coeffs[i] * x;
 	}
 }
 
+
 void s_mod(polynomial p, int x, polynomial *o) {
-	for (int i = 0; i < p.len; i++) {
+	for (int i = 0; i < p.len; i ++) {
 		o->coeffs[i] = mod(p.coeffs[i], x);
 	}
 }
+
 
 void neg(polynomial p, polynomial *o) {
 	s_mul(p, -1, o);
 }
 
+
 void v_add(polynomial p, polynomial q, polynomial *o) {
-	for (int i = 0; i < p.len; i++) {
+	for (int i = 0; i < p.len; i ++) {
 		o->coeffs[i] = p.coeffs[i] + q.coeffs[i];
 	}
 }
 
+
 void v_sub(polynomial p, polynomial q, polynomial *o) {
-	for (int i = 0; i < p.len; i++) {
+	for (int i = 0; i < p.len; i ++) {
 		o->coeffs[i] = p.coeffs[i] - q.coeffs[i];
 	}
 }
 
+
 void v_mul(polynomial p, polynomial q, polynomial *o) {
-	for (int i = 0; i < p.len; i++) {
-		for (int j = 0; j < q.len; j++) {
+	memset(o->coeffs, 0, o->len*sizeof(int));
+	for (int i = 0; i < p.len; i ++) {
+		for (int j = 0; j < q.len; j ++) {
 			o->coeffs[(i+j) % p.len] += p.coeffs[i] * q.coeffs[j];
 		}
 	}
 }
+
 
 int inv(int a, int p) {
 	int b0 = p, t, q;
@@ -108,6 +122,7 @@ int inv(int a, int p) {
 	return x1;
 }
 
+
 polynomial *new_polynomial(int len) {
 	polynomial *p = malloc(sizeof(polynomial));
 	p->len = len;
@@ -115,10 +130,12 @@ polynomial *new_polynomial(int len) {
 	return p;
 }
 
+
 void free_polynomial(polynomial *p) {
 	free(p->coeffs);
 	free(p);
 }
+
 
 void inverse_modp(polynomial F, int p, polynomial *o) {
 	int k = 0, N = F.len;
@@ -135,10 +152,10 @@ void inverse_modp(polynomial F, int p, polynomial *o) {
 		while (degree(*f) != 0 && f->coeffs[0] == 0) {
 			lshift(*f, 1, f);
 			rshift(*c, 1, c);
-			k++;
+			k ++;
 		}
 		if (degree(*f) == 0) {
-			b->len--;
+			b->len --;
 			s_mul(*b, inv(f->coeffs[0], p), o);
 			lshift(*o, k % N, o);
 			free_polynomial(b); free_polynomial(c);
@@ -163,6 +180,44 @@ void inverse_modp(polynomial F, int p, polynomial *o) {
 	}
 }
 
+
+void inverse_modpn(polynomial F, int pn, polynomial *o) {
+	int factorise_pn(int pn) {
+		int p = 2;
+		while (pn % p != 0) {
+			p ++;
+		}
+		return p;
+	}
+
+	int is_zero(polynomial F) {
+		if (F.len > 0) {
+			F.len --;
+			F.coeffs += sizeof(int);
+			return (F.coeffs[-1] == 0) && is_zero(F);
+		} else {
+			return true;
+		}
+	}
+
+	int p = factorise_pn(pn);
+	inverse_modp(F, p, o);
+	if (!is_zero(*o)) {
+		polynomial *t1 = new_polynomial(F.len),
+				   *t2 = new_polynomial(F.len),
+				   *t3 = new_polynomial(F.len);
+		while (p < pn) {
+			p *= p;
+			v_mul(F, *o, t1);
+			s_add(*t1, -2, t2);
+			v_mul(*t2, *o, t3);
+			s_mod(*t3, p, o);
+		}
+		free_polynomial(t1); free_polynomial(t2); free_polynomial(t3);
+	}
+}
+
+
 int main() {
 	polynomial *f = new_polynomial(11),
 	           *g = new_polynomial(11),
@@ -184,12 +239,12 @@ int main() {
 //     }
 //     len = PyTuple_Size(py_tuple);
 //     int *c_array = malloc(len * sizeof(int));
-//     while (len--) {
+//     while (len --) {
 //         c_array[len] = (int) PyInt_AsLong(PyTuple_GetItem(py_tuple, len));
 //     }
 // }
 //
 // result = PyList_New(p.len);
-// for(int i = 0; i < p.len; i++) {
+// for(int i = 0; i < p.len; i ++) {
 //     PyList_SetItem(result, i, PyInt_FromLong(p.coeffs[i]));
 // }
