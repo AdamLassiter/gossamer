@@ -35,6 +35,3 @@ _The Gossamer network aims to provide anonymity by disclosing addresses only to 
 * Network-wide encryption layer using server's key
 * Each node has individual encryption key
 * Vote new users in using secret-sharing
-
-[//]: # "Redesign README to be Modules->Classes(->Functions?)"
-[//]: # "Add sources, flavour, license stuff"
