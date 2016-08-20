@@ -255,7 +255,7 @@ class NTRUCipher(object):
         q  - Prime-power modulus for polynomial ring
         """
         # FIXME: Obsolete since Sept. 2015, see ./params.pdf
-        # TODO: Should actually use Hw
+        # TODO: Should actually check against Hw
         def create(keypair=None):
             layout = ['N', 'd', 'Hw', 'p', 'q']
             c = NTRUCipher(dict(zip(layout, (N, d, Hw, p, q))), keypair)
