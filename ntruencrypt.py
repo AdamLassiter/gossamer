@@ -312,7 +312,5 @@ NTRUEncrypt192 = NTRUCipher.preset(587, 17, 306, 3, 1024)
 NTRUEncrypt256 = NTRUCipher.preset(787, 22, 462, 3, 2048)
 
 if __name__ == '__main__':
-    p = NTRUPolynomial([-1, 1, 1, 0, -1, 0, 1, 0, 0, 1, -1])
-    print p.inverse_modpn(32) % 32
-    # import tests
-    # tests.test_ntru()
+    import tests
+    tests.test_ntru()
