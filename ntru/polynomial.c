@@ -1,13 +1,4 @@
-#include <Python.h> // includes stdio.h, stdlib.h, string.h
-#define order(p) p.len - 1
-#define mod(a, b) ((b + (a % b)) % b)
-#define true 1
-
-typedef struct polynomial {
-	int len;
-	int *coeffs;
-} polynomial;
-
+#include "polynomial.h"
 
 void prettyprint(polynomial p) {
 	for (int i = 0; i < p.len; i ++) {
@@ -26,7 +17,9 @@ void rshift(polynomial p, int n, polynomial *o) {
 		arr[end] = temp;
 		reverse(arr, start+1, end-1);
 	}
-	memcpy(o->coeffs, p.coeffs, p.len*sizeof(int));
+	if (o->coeffs != p.coeffs) {
+		memcpy(o->coeffs, p.coeffs, p.len * sizeof(int));
+	}
 	reverse(o->coeffs, 0, o->len - 1);
 	reverse(o->coeffs, 0, n - 1);
 	reverse(o->coeffs, n, o->len - 1);
@@ -77,11 +70,6 @@ void s_mod(polynomial p, int x, polynomial *o) {
 }
 
 
-void neg(polynomial p, polynomial *o) {
-	s_mul(p, -1, o);
-}
-
-
 void v_add(polynomial p, polynomial q, polynomial *o) {
 	for (int i = 0; i < p.len; i ++) {
 		o->coeffs[i] = p.coeffs[i] + q.coeffs[i];
@@ -97,7 +85,7 @@ void v_sub(polynomial p, polynomial q, polynomial *o) {
 
 
 void v_mul(polynomial p, polynomial q, polynomial *o) {
-	memset(o->coeffs, 0, o->len*sizeof(int));
+	memset(o->coeffs, 0, o->len * sizeof(int));
 	for (int i = 0; i < p.len; i ++) {
 		for (int j = 0; j < q.len; j ++) {
 			o->coeffs[(i+j) % p.len] += p.coeffs[i] * q.coeffs[j];
@@ -122,9 +110,10 @@ int inv(int a, int p) {
 
 
 polynomial *new_polynomial(int len) {
-	polynomial *p = malloc(sizeof(polynomial));
+	polynomial *p = (polynomial*) malloc(sizeof(polynomial));
 	p->len = len;
-	p->coeffs = malloc(len * sizeof(int));
+	p->coeffs = (int*) malloc(len * sizeof(int));
+	memset(p->coeffs, 0, p->len * sizeof(int));
 	return p;
 }
 
@@ -216,42 +205,21 @@ void inverse_modpn(polynomial F, int pn, polynomial *o) {
 }
 
 
-int main() {
+int test(int n) {
+	return n + 1;
+}
+
+
+int main(void) {
 	polynomial *f = new_polynomial(11),
 	           *g = new_polynomial(11),
 			   *fg = new_polynomial(11);
 
-    static int fc[11] = {-1, 1, 1, 0, -1, 0, 1, 0, 0, 1, -1};
-	f->coeffs = fc;
+    int fc[11] = {-1, 1, 1, 0, -1, 0, 1, 0, 0, 1, -1};
+	memcpy(f->coeffs, fc, 11*sizeof(int));
 	inverse_modp(*f, 3, g);
 	v_mul(*f, *g, fg); s_mod(*fg, 3, fg);
-	prettyprint(*fg);
-}
+	prettyprint(*f); prettyprint(*g); prettyprint(*fg);
 
-
-polynomial get_PyTuple(PyObject *args) {
-    PyObject *py_tuple;
-    int len;
-	polynomial ret;
-    if (!PyArg_ParseTuple(args, "O", &py_tuple)) {
-		ret.coeffs = NULL;
-		ret.len = 0;
-    } else {
-	    len = PyTuple_Size(py_tuple);
-		ret.len = len;
-	    ret.coeffs = malloc(len * sizeof(int));
-	    while (len --) {
-	        ret.coeffs[len] = (int) PyInt_AsLong(PyTuple_GetItem(py_tuple, len));
-	    }
-	}
-	return ret;
-}
-
-
-PyObject *set_PyTuple(polynomial p) {
-	PyObject *result = PyTuple_New(p.len);
-	for(int i = 0; i < p.len; i ++) {
-		PyList_SetItem(result, i, PyInt_FromLong(p.coeffs[i]));
-	}
-	return result;
+	free_polynomial(f); free_polynomial(g); free_polynomial(fg);
 }
