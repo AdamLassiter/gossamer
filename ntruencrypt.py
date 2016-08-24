@@ -107,7 +107,7 @@ class NTRUPolynomial(tuple):
                 g %= p ** n
                 r /= 2
                 n *= 2
-        return g % pn
+        return g % pn if g else None
 
     try:
         # Try to use accelerated c library
@@ -141,7 +141,6 @@ class NTRUPolynomial(tuple):
             return self.new(self.cLib.inverse_modp(self, p))
 
     except Exception as ex:
-        print ex
         # Fallback to pure-python implementation
 
         def __lshift__(self, n):
