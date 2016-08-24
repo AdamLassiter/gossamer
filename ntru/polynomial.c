@@ -84,7 +84,9 @@ PyObject *lshift(PyObject *P, int n) {
 
 
 int c_degree(polynomial p) {
-	if (p.coeffs[order(p)] == 0) {
+	if (p.len == 0) {
+		return 0;
+	} else if (p.coeffs[order(p)] == 0) {
 		p.len --;
 		return c_degree(p);
 	} else {
@@ -208,13 +210,32 @@ int inv(int a, int p) {
 }
 
 
+int is_zero(polynomial F) {
+	if (F.len > 0) {
+		F.len --;
+		F.coeffs += sizeof(int);
+		return (F.coeffs[-1] == 0) && is_zero(F);
+	} else {
+		return true;
+	}
+}
+
+
+void swap(polynomial *a, polynomial *b) {
+    polynomial temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+
 void c_inverse_modp(polynomial F, int p, polynomial *o) {
-	int k = 0, N = F.len;
-	k = N; N = k;
+	int N = F.len, k = N, u;
 	polynomial *b = new_polynomial(N + 1),
 	           *c = new_polynomial(N + 1),
 			   *f = new_polynomial(N + 1),
-			   *g = new_polynomial(N + 1);
+			   *g = new_polynomial(N + 1),
+			   *t1 = new_polynomial(N + 1),
+			   *t2 = new_polynomial(N + 1);
 	b->coeffs[0] = 1;
 	memcpy(f->coeffs, F.coeffs, N * sizeof(int));
 	g->coeffs[0] = -1; g->coeffs[g->len - 1] = 1;
@@ -225,35 +246,42 @@ void c_inverse_modp(polynomial F, int p, polynomial *o) {
 			c_rshift(*c, 1, c);
 			k ++;
 		}
+
 		if (c_degree(*f) == 0) {
-			b->len --;
-			c_s_mul(*b, inv(f->coeffs[0], p), o);
-			c_lshift(*o, k % N, o);
-			free_polynomial(b); free_polynomial(c);
-			free_polynomial(f); free_polynomial(g);
-			return;
+			break;
 		}
+
 		if (c_degree(*f) < c_degree(*g)) {
-			polynomial *tmp;
-			tmp = f;
-			f = g;
-			g = tmp;
-			tmp = b;
-			b = c;
-			c = tmp;
+			swap(f, g);
+			swap(b, c);
 		}
-		int u = f->coeffs[0] * inv(g->coeffs[0], p);
-		polynomial *t1 = new_polynomial(N + 1),
-		           *t2 = new_polynomial(N + 1);
+
+		u = f->coeffs[0] * inv(g->coeffs[0], p);
 		c_s_mul(*g, u, t1); c_v_sub(*f, *t1, t2); c_s_mod(*t2, p, f);
 		c_s_mul(*c, u, t1); c_v_sub(*b, *t1, t2); c_s_mod(*t2, p, b);
-		free_polynomial(t1); free_polynomial(t2);
 	}
+
+	if (f->coeffs[0] != 0) {
+		b->len --;
+		c_s_mul(*b, inv(f->coeffs[0], p), o);
+		c_lshift(*o, k % N, o);
+		free_polynomial(b); free_polynomial(c);
+		free_polynomial(f); free_polynomial(g);
+		free_polynomial(t1); free_polynomial(t2);
+	} else {
+		memset(o->coeffs, 0, o->len * sizeof(int));
+	}
+	return;
 }
 PyObject *inverse_modp(PyObject *P, int n) {
 	polynomial *p = from_PyTuple(P);
 	c_inverse_modp(*p, n, p);
-	return to_PyTuple(p);
+	if (is_zero(*p)) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	} else {
+		return to_PyTuple(p);
+	}
 }
 
 
@@ -270,16 +298,6 @@ void c_inverse_modpn(polynomial F, int pn, polynomial *o) {
 			ret[1] ++;
 		}
 		return ret;
-	}
-
-	int is_zero(polynomial F) {
-		if (F.len > 0) {
-			F.len --;
-			F.coeffs += sizeof(int);
-			return (F.coeffs[F.len - 1] == 0) && is_zero(F);
-		} else {
-			return true;
-		}
 	}
 
 	int pow(int x, int n) {
@@ -310,7 +328,12 @@ void c_inverse_modpn(polynomial F, int pn, polynomial *o) {
 PyObject *inverse_modpn(PyObject *P, int n) {
 	polynomial *p = from_PyTuple(P);
 	c_inverse_modpn(*p, n, p);
-	return to_PyTuple(p);
+	if (is_zero(*p)) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	} else {
+		return to_PyTuple(p);
+	}
 }
 
 
