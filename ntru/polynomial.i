@@ -3,4 +3,5 @@
         #include "polynomial.h"
 %}
 
-extern int test(int);
+extern void inverse_modp(polynomial, int, polynomial*);
+extern void inverse_modpn(polynomial, int, polynomial*);

@@ -10,4 +10,5 @@ typedef struct polynomial {
 } polynomial;
 
 
-int test(int);
+void inverse_modp(polynomial, int, polynomial*);
+void inverse_modpn(polynomial, int, polynomial*);

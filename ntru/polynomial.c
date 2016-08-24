@@ -205,11 +205,6 @@ void inverse_modpn(polynomial F, int pn, polynomial *o) {
 }
 
 
-int test(int n) {
-	return n + 1;
-}
-
-
 int main(void) {
 	polynomial *f = new_polynomial(11),
 	           *g = new_polynomial(11),
