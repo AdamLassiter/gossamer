@@ -1,4 +1,6 @@
 *.pyc
 *.pyo
 *.txt
+*.so
+*wrap.c
 .*
