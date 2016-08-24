@@ -10,5 +10,19 @@ typedef struct polynomial {
 } polynomial;
 
 
-void inverse_modp(polynomial, int, polynomial*);
-void inverse_modpn(polynomial, int, polynomial*);
+PyObject *rshift(PyObject*, int);
+PyObject *lshift(PyObject*, int);
+
+int degree(PyObject*);
+PyObject *centerlift(PyObject*, int);
+
+PyObject *s_mul(PyObject*, int);
+PyObject *s_add(PyObject*, int);
+PyObject *s_mod(PyObject*, int);
+
+PyObject *v_add(PyObject*, PyObject*);
+PyObject *v_sub(PyObject*, PyObject*);
+PyObject *v_mul(PyObject*, PyObject*);
+
+PyObject *inverse_modp(PyObject*, int);
+PyObject *inverse_modpn(PyObject*, int);
