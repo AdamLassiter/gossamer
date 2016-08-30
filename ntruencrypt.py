@@ -20,12 +20,14 @@ def base_convert(digits, fromBase, toBase):
 
 def split(unpadded_list, N):
     """
-    Splits a list into a series of N-length lists, padding the last with 0s
+    Splits a list into a series of N-length lists
+    Pads the last list with null-terminator 0x00 and then 0xFF chars
     """
+    terminated_list = unpadded_list + [0]
     padded_lists = []
-    for n in range(0, len(unpadded_list), N):
-        padded_lists.append(unpadded_list[n:n + N])
-    padded_lists[-1].extend([0 for n in range(N - len(padded_lists[-1]))])
+    for n in range(0, len(terminated_list), N):
+        padded_lists.append(terminated_list[n:n + N])
+    padded_lists[-1].extend([255 for _ in range(N - len(padded_lists[-1]))])
     return padded_lists
 
 
@@ -52,7 +54,6 @@ def base2str(lists, base):
     """
     Converts a list of ints in a given base to a string
     """
-    # FIXME:20 Will strip trailing null-characters
     return str(bytearray(base_convert(join(lists), base, 256)))
 
 
@@ -294,7 +295,6 @@ class NTRUCipher(object):
         p  - Prime modulus for polynomial ring
         q  - Prime-power modulus for polynomial ring
         """
-        # FIXME:0 Obsolete since Sept. 2015, see ./params.pdf
         # TODO:60 Should actually check against Hw
         def create(keypair=None):
             layout = ['N', 'd', 'Hw', 'p', 'q']
