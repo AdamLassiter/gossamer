@@ -1,5 +1,5 @@
 from struct import pack, unpack
-from socket import socket
+from socket import socket, create_connection as csocket, AF_INET, SOCK_STREAM
 import crypto
 
 from declarative import accepts, returns
@@ -14,7 +14,7 @@ PADDING_WIDTH = 1 << 5
 
 class DumbChannel:
     # Managed socket for sending / receiving plain data
-    # Will automatically detect length (unsigned long long = 18k TB)
+    # Will automatically detect length (maximum unsigned long long = 18k TB)
     # Should be buffered, currently isn't
 
     @accepts(socket)
@@ -40,12 +40,36 @@ class DumbChannel:
 class SecureChannel:
     # Used for sending message objects, manages client-server connection etc...
 
-    @accepts(socket, signature=str, dominant=bool)
-    def __init__(self, sock, signature="", dominant=False):
-        self.channel = DumbChannel(sock)
+    @accepts(tuple, signature=str, is_server=bool)
+    def __init__(self, address, signature="", is_server=False):
+        self.address = address
         self.signature = signature
-        self.dominant = dominant
-        self.msg_generator = None
+        self.is_server = is_server
+        self.channel = None
+
+    def __enter__(self):
+        if self.channel is None:
+            sock = self.new_socket(self.address, self.is_server)
+            if self.is_server:
+                self.channel = DumbChannel(sock.accept()[0])
+            else:
+                self.channel = DumbChannel(sock)
+        self.connect()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.channel.sock.close()
+
+    @staticmethod
+    @accepts(tuple, bool)
+    def new_socket(address, is_server=False):
+        if is_server:
+            sock = socket(AF_INET, SOCK_STREAM)
+            sock.bind(address)
+            sock.listen(1)
+        else:
+            sock = csocket(address)
+        return sock
 
     @accepts(str)
     def send(self, message):
@@ -69,29 +93,26 @@ class SecureChannel:
     def connect(self):
         # Initialise crypto objects
         symmetric = crypto.SymmetricEncryption(strength=AES_STRENGTH)
-        private = crypto.AsymmetricEncryption(strength=RSA_STRENGTH)
-        signature = crypto.Signature(key=self.signature)
-        padding = crypto.SaltedPadding(padding_width=PADDING_WIDTH)
+        private = crypto.AsymmetricEncryption()
+        signature = crypto.Signature(keypair=self.signature)
         hashchain = crypto.HashChain()
-        # Either send or reci\eve first
-        if self.dominant:
-            self.__send(str(private))
+        # Either send or recieve first
+        if self.is_server:
+            self.__send(private.pubkey())  # NOT THIS
             public = crypto.AsymmetricEncryption(
-                key=private.encrypt(self.__recv()))
-            self.__send(public.decrypt(private.encrypt(str(symmetric))))
+                key=private.decrypt(self.__recv()))
+            self.__send(public.encrypt(private.encrypt(str(symmetric))))
             self.__send(symmetric.encrypt(str(signature)))
-            other_sig = crypto.Signature(
-                kry=symmetric.decrypt(self.__recv()))
+            other_sig = crypto.Signature(key=symmetric.decrypt(self.__recv()))
         else:
             public = crypto.AsymmetricEncryption(key=self.__recv())
-            self.channel.send(public.decrypt(str(private)))
-            key = public.decrypt(private.encrypt(self.__recv()))
+            self.channel.send(public.encrypt(str(private)))
+            key = public.decrypt(private.decrypt(self.__recv()))
             symmetric = crypto.SymmetricEncryption(key=key)
-            other_sig = crypto.Signature(
-                key=symmetric.decrypt(self.__recv()))
+            other_sig = crypto.Signature(key=symmetric.decrypt(self.__recv()))
             self.__send(symmetric.encrypt(str(signature)))
-        self.msg_generator = MessageGenerator(symmetric, signature, other_sig,
-                                              padding, hashchain)
+        self.msg_generator = MessageGenerator(
+            symmetric, signature, other_sig, padding, hashchain)
 
 
 class MessageGenerator:
@@ -104,8 +125,8 @@ class MessageGenerator:
     Each block is preceeded by its length
     """
 
-    @accepts(crypto.SymmetricEncryption, crypto.Signature,
-             crypto.Signature, crypto.SaltedPadding, crypto.HashChain)
+    @accepts(crypto.SymmetricEncryption, crypto.Signature, crypto.Signature,
+             crypto.SaltedPadding, crypto.HashChain)
     def __init__(self, symmetric, self_sig, other_sig, padding, hashchain):
         self.symmetric = symmetric
         self.signature = self_sig

@@ -21,13 +21,13 @@ def base_convert(digits, fromBase, toBase):
 def split(unpadded_list, N):
     """
     Splits a list into a series of N-length lists
-    Pads the last list with null-terminator 0x00 and then 0xFF chars
+    Pads the last list with terminator 0x01 and then 0x00 chars
     """
-    terminated_list = unpadded_list + [0]
+    terminated_list = unpadded_list + [1]
     padded_lists = []
     for n in range(0, len(terminated_list), N):
         padded_lists.append(terminated_list[n:n + N])
-    padded_lists[-1].extend([255 for _ in range(N - len(padded_lists[-1]))])
+    padded_lists[-1].extend([0 for _ in range(N - len(padded_lists[-1]))])
     return padded_lists
 
 
@@ -40,7 +40,7 @@ def join(padded_lists):
         unpadded_list.extend(l)
     while unpadded_list[-1] == 0:
         del unpadded_list[-1]
-    return unpadded_list
+    return unpadded_list[:-1]
 
 
 def str2base(string, base, N):
@@ -228,15 +228,12 @@ class NTRUCipher(object):
         # In need of improvement to meet spec, see docs/ntru/ntru_params.pdf
         k = [0 for n in range(params['N'])]
         d1, d2 = params['d'], params['d'] - 1
-        while d1:
-            r = randint(0, params['N'] - 1)
-            k[r] = 1
-            d1 -= 1
-        while d2:
-            r = randint(0, params['N'] - 1)
-            if not k[r]:
-                k[r] = -1
-                d2 -= 1
+        for d, i in ((d1, 1), (d2, -1)):
+            while d:
+                r = randint(0, params['N'] - 1)
+                if not k[r]:
+                    k[r] = i
+                    d -= 1
         return NTRUPolynomial(k)
 
     @staticmethod
@@ -284,6 +281,12 @@ class NTRUCipher(object):
         plainpolys = map(decrypt_p, polys)
         plaintext = base2str(plainpolys, self.params['p'])
         return plaintext
+
+    def pubkey(self):
+        pass
+
+    def privkey(self):
+        pass
 
     @staticmethod
     def preset(N, d, Hw, p, q):
