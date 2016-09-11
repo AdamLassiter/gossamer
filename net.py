@@ -40,8 +40,8 @@ class DumbChannel:
 class SecureChannel:
     # Used for sending message objects, manages client-server connection etc...
 
-    @accepts(tuple, signature=str, is_server=bool)
-    def __init__(self, address, signature="", is_server=False):
+    @accepts(tuple, signature=dict, is_server=bool)
+    def __init__(self, address, signature=None, is_server=False):
         self.address = address
         self.signature = signature
         self.is_server = is_server
@@ -49,7 +49,7 @@ class SecureChannel:
 
     def __enter__(self):
         if self.channel is None:
-            sock = self.new_socket(self.address, self.is_server)
+            sock = self.new_socket(self.address, is_server=self.is_server)
             if self.is_server:
                 self.channel = DumbChannel(sock.accept()[0])
             else:
@@ -61,7 +61,7 @@ class SecureChannel:
         self.channel.sock.close()
 
     @staticmethod
-    @accepts(tuple, bool)
+    @accepts(tuple, is_server=bool)
     def new_socket(address, is_server=False):
         if is_server:
             sock = socket(AF_INET, SOCK_STREAM)
@@ -93,58 +93,56 @@ class SecureChannel:
     def connect(self):
         # Initialise crypto objects
         symmetric = crypto.SymmetricEncryption(strength=AES_STRENGTH)
-        private = crypto.AsymmetricEncryption()
-        signature = crypto.Signature(keypair=self.signature)
+        public, private = crypto.AsymmetricEncryption(), crypto.AsymmetricEncryption()
+        signature, other_sig = crypto.Signature(keypair=self.signature), crypto.Signature(keypair=self.signature)
         hashchain = crypto.HashChain()
+
         # Either send or recieve first
         if self.is_server:
-            self.__send(private.pubkey())  # NOT THIS
-            public = crypto.AsymmetricEncryption(
-                key=private.decrypt(self.__recv()))
-            self.__send(public.encrypt(private.encrypt(str(symmetric))))
-            self.__send(symmetric.encrypt(str(signature)))
-            other_sig = crypto.Signature(key=symmetric.decrypt(self.__recv()))
+            self.__send(private.pubkey())
+            public.set_key(private.decrypt(self.__recv()))
+            self.__send(public.encrypt(private.encrypt(symmetric.pubkey())))
+            self.__send(symmetric.encrypt(signature.pubkey()))
+            other_sig.set_key(pub=symmetric.decrypt(self.__recv()))
+
         else:
-            public = crypto.AsymmetricEncryption(key=self.__recv())
-            self.channel.send(public.encrypt(str(private)))
+            public.set_key(pub=self.__recv())
+            self.channel.send(public.encrypt(private.pubkey()))
             key = public.decrypt(private.decrypt(self.__recv()))
             symmetric = crypto.SymmetricEncryption(key=key)
             other_sig = crypto.Signature(key=symmetric.decrypt(self.__recv()))
-            self.__send(symmetric.encrypt(str(signature)))
+            self.__send(symmetric.encrypt(signature.pubkey()))
+
         self.msg_generator = MessageGenerator(
-            symmetric, signature, other_sig, padding, hashchain)
+            symmetric, signature, other_sig, hashchain)
 
 
 class MessageGenerator:
     """Creates message objects from encryption keys and text.
 
     Message format:
-    |                    symmetric encrypted data                    |
-    | salt | message | asymmetric encrypted signature | chained hash |
-                     |        hash of message         |
+    |                 symmetric encrypted data                |
+    | message | asymmetric encrypted signature | chained hash |
+              |        hash of message         |
     Each block is preceeded by its length
     """
 
-    @accepts(crypto.SymmetricEncryption, crypto.Signature, crypto.Signature,
-             crypto.SaltedPadding, crypto.HashChain)
-    def __init__(self, symmetric, self_sig, other_sig, padding, hashchain):
+    @accepts(crypto.SymmetricEncryption, crypto.Signature, crypto.Signature, crypto.HashChain)
+    def __init__(self, symmetric, self_sig, other_sig, hashchain):
         self.symmetric = symmetric
         self.signature = self_sig
         self.other_sig = other_sig
-        self.padding = padding
         self.hashchain = hashchain
 
     @accepts(str)
     @returns(str)
     def construct(self, text):
-        def add_block(text, data):
-            text[0] += pack("q", len(data)) + data
-        message = [""]                                      # Mutability hack
-        add_block(message, self.padding.pad(""))            # Salt
-        add_block(message, text)                            # Message text
-        add_block(message, self.signature.sign(text))       # Signature
-        add_block(message, self.hashchain.chain())          # Chained hash
-        encrypted = self.symmetric.encrypt(message[0])      # Encrypted message
+        def with_len(data):
+            return pack("q", len(data)) + data
+        message = "".join(map(with_len, [text,
+                                         self.signature.sign(text),
+                                         self.hashchain.chain()]))
+        encrypted = self.symmetric.encrypt(message)
         return encrypted
 
     @accepts(str)
