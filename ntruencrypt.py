@@ -43,16 +43,17 @@ def join(padded_lists):
     return unpadded_list[:-1]
 
 
-def str2base(string, base, N):
+def str2base(string, base, N=0):
     """
-    Converts a string to a list of ints in a given base
+    Converts a string to lists of ints, length N, in a given base
     """
-    return split(base_convert(list(bytearray(string)), 256, base), N)
+    unpadded_list = base_convert(list(bytearray(string)), 256, base)
+    return split(unpadded_list, N) if N else [unpadded_list]
 
 
 def base2str(lists, base):
     """
-    Converts a list of ints in a given base to a string
+    Converts lists of ints in a given base to a string
     """
     return str(bytearray(base_convert(join(lists), base, 256)))
 
@@ -221,7 +222,7 @@ class NTRUCipher(object):
         self.params = params
 
     def __repr__(self):
-        return '<NTRUCipher with f=%s, h=%s, params=%s>' % (self.key['priv'], self.key['pub'])
+        return '<NTRUCipher with f=%s, h=%s, params=%s>' % (self.key['priv'], self.key['pub'], self.params)
 
     @staticmethod
     def random_poly(params):
@@ -283,10 +284,16 @@ class NTRUCipher(object):
         return plaintext
 
     def pubkey(self):
-        pass
+        return base2str([self.key['pub'] % self.params['p']] + [[1]], self.params['p'])
 
     def privkey(self):
-        pass
+        return base2str([self.key['priv'] % self.params['q']] + [[1]], self.params['q'])
+
+    def set_key(self, pub="", priv=""):
+        if pub:
+            self.key['pub'] = NTRUPolynomial(str2base(pub, self.params['p']))
+        if priv:
+            self.key['priv'] = NTRUPolynomial(str2base(pub, self.params['q']))
 
     @staticmethod
     def preset(N, d, Hw, p, q):
