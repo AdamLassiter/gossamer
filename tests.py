@@ -3,7 +3,7 @@ from crypto import *
 from ntruencrypt import *
 
 from sys import stdout
-printout = stdout.write
+printout = lambda *args: stdout.write(*args) and stdout.flush()
 
 
 def test_keccak():
@@ -92,14 +92,16 @@ def test_net():
     @threaded
     def run_server(addr, msg):
         with SecureChannel(addr, is_server=True) as server:
+            print "send"
             server.send(msg)
 
     def test_client(addr, msg):
         with SecureChannel(addr) as client:
+            print "recv"
             assert msg == client.recv()
 
     printout('test-net ')
-    addr = ('localhost', 5006)
+    addr = ('localhost', 5004)
     msg = ''.join([chr(randint(32, 127)) for _ in range(1 << 3)])
     run_server(addr, msg)
     sleep(1)
@@ -111,7 +113,7 @@ def run():
     test_keccak()
     test_ntru()
     test_crypto()
-    # test_net()
+    test_net()
     printout('\ntests passed\n')
 
 
