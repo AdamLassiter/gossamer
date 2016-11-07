@@ -222,7 +222,8 @@ class NTRUCipher(object):
         self.params = params
 
     def __repr__(self):
-        return '<NTRUCipher with f=%s, h=%s, params=%s>' % (self.key['priv'], self.key['pub'], self.params)
+        return '<NTRUCipher with f=%s, h=%s, params=%s>' % \
+            (self.key['priv'], self.key['pub'], self.params)
 
     @staticmethod
     def random_poly(params):
