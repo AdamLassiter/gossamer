@@ -3,6 +3,7 @@ from socket import socket, create_connection as csocket, AF_INET, SOCK_STREAM
 import crypto
 
 from declarative import accepts, returns
+from debug import debug
 
 # TODO:0 Add create_sock to module?
 
@@ -40,6 +41,7 @@ class DumbChannel:
 class SecureChannel:
     # Used for sending message objects, manages client-server connection etc...
 
+    @debug
     @accepts(tuple, signature=dict, is_server=bool)
     def __init__(self, address, signature=None, is_server=False):
         self.address = address
@@ -47,6 +49,7 @@ class SecureChannel:
         self.is_server = is_server
         self.channel = None
 
+    @debug
     def __enter__(self):
         if self.channel is None:
             sock = self.new_socket(self.address, is_server=self.is_server)
@@ -71,6 +74,7 @@ class SecureChannel:
             sock = csocket(address)
         return sock
 
+    @debug
     @accepts(str)
     def send(self, message):
         data = self.msg_generator.construct(message)
@@ -79,6 +83,7 @@ class SecureChannel:
     def __send(self, message):
         self.channel.send(message)
 
+    @debug
     @returns(str)
     def recv(self):
         if self.msg_generator:
