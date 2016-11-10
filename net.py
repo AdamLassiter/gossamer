@@ -5,7 +5,7 @@ import crypto
 from declarative import accepts, returns
 from debug import debug
 
-# TODO:0 Add create_sock to module?
+# TODO Add create_sock to module? id:12
 
 
 AES_STRENGTH = 1 << 7
@@ -48,6 +48,7 @@ class SecureChannel:
         self.signature = signature
         self.is_server = is_server
         self.channel = None
+        self.msg_generator = None
 
     @debug
     def __enter__(self):
@@ -64,6 +65,7 @@ class SecureChannel:
         self.channel.sock.close()
 
     @staticmethod
+    @debug
     @accepts(tuple, is_server=bool)
     def new_socket(address, is_server=False):
         if is_server:
@@ -95,11 +97,13 @@ class SecureChannel:
     def __recv(self):
         return self.channel.recv()
 
+    @debug
     def connect(self):
         # Initialise crypto objects
         symmetric = crypto.SymmetricEncryption(strength=AES_STRENGTH)
         public, private = crypto.AsymmetricEncryption(), crypto.AsymmetricEncryption()
-        signature, other_sig = crypto.Signature(keypair=self.signature), crypto.Signature(keypair=self.signature)
+        signature, other_sig = crypto.Signature(
+            keypair=self.signature), crypto.Signature(keypair=self.signature)
         hashchain = crypto.HashChain()
 
         # Either send or recieve first

@@ -91,7 +91,7 @@ def test_net():
     from net import SecureChannel
     from concurrency import threaded
 
-    # FIXME:10 issue:2 SecurreChannel does not like connecting :(
+    # FIXME issue:2 SecurreChannel does not like connecting :( id:16
 
     @threaded
     def run_server(addr, msg):

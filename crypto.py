@@ -3,12 +3,13 @@ from Crypto.Hash import SHA512
 from Crypto.Cipher import AES
 from ntruencrypt import NTRUCipher
 from declarative import accepts, returns
+from debug import debug
 
-# TODO:10 Extract necessary pyCrypto modules to local folder?
-# TODO:50 SHA2 / SHA3 choice
-# TODO:40 RSA / NTRUEncrypt choice
-# IDEA:0 Symmetric algo. choice?
-# TODO:120 Implement DHKE or use NTRU... Fuck pyCrypto
+# TODO Extract necessary pyCrypto modules to local folder? id:0
+# TODO SHA2 / SHA3 choice id:1
+# TODO RSA / NTRUEncrypt choice id:2
+# IDEA Symmetric algo. choice? id:3
+# TODO Implement DHKE or use NTRU... Fuck pyCrypto id:4
 
 
 @accepts(int)
@@ -25,7 +26,7 @@ class Hash:
 
     @accepts(str, n=int)
     @returns(str)
-    def digest(self, text, n=1024):
+    def digest(self, text, n=1):
         hash_obj = SHA512.new(text)
         for i in xrange(n - 1):
             hash_obj = SHA512.new(hash_obj.digest())
