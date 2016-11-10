@@ -1,4 +1,10 @@
 from functools import wraps
+from sys import stdout
+
+
+def printout(*args):
+    stdout.write(*args)
+    stdout.flush()
 
 
 class depth_handler:
@@ -12,20 +18,26 @@ class depth_handler:
 
     def __exit__(self, type, value, traceback):
         self.depth -= 1
-debug_depth = depth_handler()
+__debug_depth = depth_handler()
 
 
 def debug(func):
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        global debug_depth
+        global __debug_depth
         with debug_depth as depth:
-            ret = func(*args, **kwargs)
             func_args = [arg for arg in args] + \
                         ["%s=%s" % kv_pair for kv_pair in kwargs.items()]
-            print "\t" * depth + "%s(%s) -> %s" % \
-                  (func.__name__, ", ".join(map(str, func_args)), ret)
-        return ret
+            printout("debugging %s\n" % func.__name__)
+            try:
+                ret = func(*args, **kwargs)
+                printout("\t" * depth + "%s(%s) -> %s\n" %
+                         (func.__name__, ", ".join(map(str, func_args)), ret))
+                return ret
+            except e:
+                printout("\t" * depth + "%s(%s) -> Exception! (%s)\n" %
+                         (func.__name__, ", ".join(map(str, func_args)), e))
+                raise e
 
     return wrapper
