@@ -26,16 +26,16 @@ def debug(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         global __debug_depth
-        with debug_depth as depth:
+        with __debug_depth as depth:
             func_args = [arg for arg in args] + \
                         ["%s=%s" % kv_pair for kv_pair in kwargs.items()]
-            printout("debugging %s\n" % func.__name__)
+            printout("debugging %s(%s)\n" % (func.__name__, ", ".join(map(str, func_args))))
             try:
                 ret = func(*args, **kwargs)
                 printout("\t" * depth + "%s(%s) -> %s\n" %
                          (func.__name__, ", ".join(map(str, func_args)), ret))
                 return ret
-            except e:
+            except Exception as e:
                 printout("\t" * depth + "%s(%s) -> Exception! (%s)\n" %
                          (func.__name__, ", ".join(map(str, func_args)), e))
                 raise e

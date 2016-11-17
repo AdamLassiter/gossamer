@@ -1,7 +1,7 @@
 import gossamer
 
-# TODO issue:2 Test io class id:10
-# TODO issue:1 Finish Program code id:11
+# TODO Test io class
+# TODO Finish Program code
 # This is hideous
 
 

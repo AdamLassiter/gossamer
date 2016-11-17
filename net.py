@@ -5,7 +5,7 @@ import crypto
 from declarative import accepts, returns
 from debug import debug
 
-# TODO Add create_sock to module? id:12
+# TODO Add create_sock to module?
 
 
 AES_STRENGTH = 1 << 7

@@ -5,11 +5,11 @@ from ntruencrypt import NTRUCipher
 from declarative import accepts, returns
 from debug import debug
 
-# TODO Extract necessary pyCrypto modules to local folder? id:0
-# TODO SHA2 / SHA3 choice id:1
-# TODO RSA / NTRUEncrypt choice id:2
-# IDEA Symmetric algo. choice? id:3
-# TODO Implement DHKE or use NTRU... Fuck pyCrypto id:4
+# TODO Extract necessary pyCrypto modules to local folder?
+# TODO SHA2 / SHA3 choice
+# TODO RSA / NTRUEncrypt choice
+# IDEA Symmetric algo. choice?
+# TODO Implement DHKE or use NTRU... Fuck pyCrypto
 
 
 @accepts(int)

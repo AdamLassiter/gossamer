@@ -261,7 +261,7 @@ class NTRUCipher(object):
         def encrypt_p(poly):
             poly = poly.centerlift(self.params['p'])
             r = self.random_poly(self.params)
-            # FIXME: pubkey is ([0],) ... why is this? id:16 issue:2
+            # FIXME: pubkey is ([0],) ... why is this?
             e = r * self.key['pub'] + poly
             return e % self.params['q']
         polys = [NTRUPolynomial(x) for x in str2base(
@@ -308,7 +308,7 @@ class NTRUCipher(object):
         p  - Prime modulus for polynomial ring
         q  - Prime-power modulus for polynomial ring
         """
-        # TODO Should actually check against Hw id:15
+        # TODO Should actually check against Hw
         def create(keypair=None):
             layout = ['N', 'd', 'Hw', 'p', 'q']
             c = NTRUCipher(dict(zip(layout, (N, d, Hw, p, q))), keypair)

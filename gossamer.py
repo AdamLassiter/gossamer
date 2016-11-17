@@ -4,8 +4,8 @@ from socket import create_connection as Socket, socket as ServerSocket
 
 from declarative import accepts, returns
 
-# TODO issue:1 Write Onion code id:5
-# TODO issue:2 Test module id:6
+# TODO Write Onion code
+# TODO Test module
 
 
 class Node:
@@ -63,7 +63,7 @@ class Node:
 
 class Onion:
 
-    # TODO issue:1 Implement all the onion id:7
+    # TODO Implement all the onion
 
     @accepts(Onion, str, )
     def __init__(self, message, route):
@@ -72,7 +72,7 @@ class Onion:
 
 class User:
 
-    # TODO issue:2 Test class id:8
+    # TODO Test class
 
     @accepts(protocol.crypto.Signature, int, SecureChannel)
     def __init__(self, signature, distance, direction):
@@ -93,7 +93,7 @@ class User:
 
 class AddressDirectoy:
 
-    # TODO issue:2 Test class id:9
+    # TODO Test class
 
     def __init__(self):
         # Initialise to empty directory

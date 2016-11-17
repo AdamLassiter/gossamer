@@ -286,7 +286,7 @@ PyObject *inverse_modp(PyObject *P, int n) {
 
 
 // WARNING - DOES NOT WORK
-// FIXME Incorrectly inverts F id:13
+// FIXME Incorrectly inverts F
 void c_inverse_modpn(polynomial F, int pn, polynomial *o) {
 	int *factorise_pn(int pn) {
 		static int ret[2] = {2, 0};
