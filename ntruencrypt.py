@@ -1,5 +1,6 @@
 from random import randint
 from math import log
+from debug import debug
 
 
 def base_convert(digits, fromBase, toBase):
@@ -260,6 +261,7 @@ class NTRUCipher(object):
         def encrypt_p(poly):
             poly = poly.centerlift(self.params['p'])
             r = self.random_poly(self.params)
+            # FIXME: pubkey is ([0],) ... why is this? id:16 issue:2
             e = r * self.key['pub'] + poly
             return e % self.params['q']
         polys = [NTRUPolynomial(x) for x in str2base(
