@@ -1,18 +1,12 @@
 from random import randint
 from crypto import *
 from ntruencrypt import *
-
-from sys import stdout
-
-
-def printout(*args):
-    stdout.write(*args)
-    stdout.flush()
+from testing import test
 
 
+@test
 def test_keccak():
     from keccak import Keccak224
-    printout('test-keccak ')
     pt = """023D91AC532601C7CA3942D62827566D9268BB4276FCAA1AE927693A6961652676D
             BA09219A01B3D5ADFA12547A946E78F3C5C62DD880B02D2EEEB4B96636529C6B011
             20B23EFC49CCFB36B8497CD19767B53710A636683BC5E0E5C9534CFC004691E87D1
@@ -28,25 +22,24 @@ def test_keccak():
     expect = '230620d710cf3ab835059e1aa170735db17cae74b345765ff02e8d89'
     h = Keccak224(pt).hexdigest()
     assert h == expect
-    printout('passed\n')
 
 
+@test
 def test_ntru():
     from ntruencrypt import NTRUEncrypt80
-    printout('test-ntru ')
     m1 = "".join([chr(randint(32, 127)) for _ in range(1 << 5)])
     c = NTRUEncrypt80()
     e = c.encrypt(m1)
     m2 = c.decrypt(e)
     assert m1 == m2
-    printout('passed\n')
 
 
+@test
 def test_crypto():
     from crypto import Hash, SymmetricEncryption, AsymmetricEncryption, Signature
 
+    @test
     def test_hash():
-        printout(' test-hash ')
         m1 = ''.join([chr(randint(32, 127)) for _ in range(1 << 5)])
         m2 = ''.join([chr(randint(32, 127)) for _ in range(1 << 5)])
         h = Hash()
@@ -56,36 +49,32 @@ def test_crypto():
         hm1_xor_hm2 = ''.join(chr(ord(a) ^ ord(b))
                               for a, b in zip(*map(h.digest, (m1, m2))))
         assert h_m1_xor_m2 != hm1_xor_hm2
-        printout('passed\n')
 
+    @test
     def test_symmetric():
-        printout(' test-symmetric ')
         msg = ''.join([chr(randint(32, 127)) for _ in range(1 << 5)])
         symm = SymmetricEncryption()
         assert msg == symm.decrypt(symm.encrypt(msg))
-        printout('passed\n')
 
+    @test
     def test_asymmetric():
-        printout(' test-asymmetric ')
         msg = ''.join([chr(randint(32, 127)) for _ in range(1 << 5)])
         asym = AsymmetricEncryption()
         assert msg == asym.decrypt(asym.encrypt(msg))
-        printout('passed\n')
 
+    @test
     def test_signature():
-        printout(' test-signature ')
         msg = ''.join([chr(randint(32, 127)) for _ in range(1 << 5)])
         sig = Signature()
         assert sig.verify(sig.sign(msg), msg)
-        printout('passed\n')
 
     test_hash()
     test_symmetric()
     test_asymmetric()
     test_signature()
-    printout('test-crypto passed\n')
 
 
+@test
 def test_net():
     from time import sleep
     from net import SecureChannel
@@ -102,22 +91,20 @@ def test_net():
         with SecureChannel(addr) as client:
             assert msg == client.recv()
 
-    printout('test-net ')
     addr = ('localhost', 5000)
     msg = ''.join([chr(randint(32, 127)) for _ in range(1 << 3)])
     run_server(addr, msg)
     sleep(1)
     test_client(addr, msg)
-    printout('passed\n')
 
 
-def test():
+@test
+def tests():
     test_keccak()
     test_ntru()
     test_crypto()
     test_net()
-    printout('\ntests passed\n')
 
 
 if __name__ == '__main__':
-    test()
+    tests()
