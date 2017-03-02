@@ -3,9 +3,10 @@
 
 polynomial *new_polynomial(int len) {
 	polynomial *p = (polynomial*) malloc(sizeof(polynomial));
-	p->len = len;
-	p->coeffs = (int*) malloc(len * sizeof(int));
-	memset(p->coeffs, 0, p->len * sizeof(int));
+	*p = (polynomial) {
+		.len = len,
+		.coeffs = calloc(sizeof(*p->coeffs), len)
+	};
 	return p;
 }
 
@@ -286,7 +287,7 @@ PyObject *inverse_modp(PyObject *P, int n) {
 
 
 // WARNING - DOES NOT WORK
-// FIXME Incorrectly inverts F
+// FIXME: Incorrectly inverts F
 void c_inverse_modpn(polynomial F, int pn, polynomial *o) {
 	int *factorise_pn(int pn) {
 		static int ret[2] = {2, 0};
@@ -337,7 +338,7 @@ PyObject *inverse_modpn(PyObject *P, int n) {
 }
 
 
-int main(void) {
+int main() {
 	polynomial *f = new_polynomial(11),
 	           *g = new_polynomial(11),
 			   *fg = new_polynomial(11);

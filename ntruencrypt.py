@@ -261,11 +261,15 @@ class NTRUCipher(object):
         def encrypt_p(poly):
             poly = poly.centerlift(self.params['p'])
             r = self.random_poly(self.params)
+            raise Exception()
             # FIXME: pubkey is ([0],) ... why is this?
             e = r * self.key['pub'] + poly
             return e % self.params['q']
         polys = [NTRUPolynomial(x) for x in str2base(
             text, self.params['p'], self.params['N'])]
+        print "TEXT IS <%s>" % text
+        print "POLYS IS <%s>" % polys
+        # FIXME: print "\n".join([p for p in polys])
         cipherpolys = map(encrypt_p, polys)
         ciphertext = base2str(cipherpolys, self.params['q'])
         return ciphertext
@@ -286,9 +290,11 @@ class NTRUCipher(object):
         plaintext = base2str(plainpolys, self.params['p'])
         return plaintext
 
+    @debug
     def pubkey(self):
         return base2str([self.key['pub'] % self.params['p']] + [[1]], self.params['p'])
 
+    @debug
     def privkey(self):
         return base2str([self.key['priv'] % self.params['q']] + [[1]], self.params['q'])
 
