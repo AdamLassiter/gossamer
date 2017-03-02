@@ -290,13 +290,13 @@ class NTRUCipher(object):
         plaintext = base2str(plainpolys, self.params['p'])
         return plaintext
 
-    @debug
     def pubkey(self):
-        return base2str([self.key['pub'] % self.params['p']] + [[1]], self.params['p'])
+        return base2str([self.key['pub'] % self.params['p']] + [[1]],
+                        self.params['p'])
 
-    @debug
     def privkey(self):
-        return base2str([self.key['priv'] % self.params['q']] + [[1]], self.params['q'])
+        return base2str([self.key['priv'] % self.params['q']] + [[1]],
+                        self.params['q'])
 
     def set_key(self, pub="", priv=""):
         if pub:
@@ -320,6 +320,7 @@ class NTRUCipher(object):
             c = NTRUCipher(dict(zip(layout, (N, d, Hw, p, q))), keypair)
             return c
         return create
+
 
 # NTRUEncrypt parameter presets
 NTRUEncrypt80 = NTRUCipher.preset(251, 8, 72, 3, 256)
