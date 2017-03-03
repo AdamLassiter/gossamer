@@ -61,12 +61,12 @@ def base2str(lists, base):
 
 class NTRUPolynomial(tuple):
 
-    @staticmethod
-    def new(*args):
+    @classmethod
+    def new(cls, *args):
         """
         Shorthand to create new NTRUPolynomial instances
         """
-        return NTRUPolynomial(*args)
+        return cls(*args)
 
     def __init__(self, coeffs):
         super(NTRUPolynomial, self).__init__(coeffs)
@@ -329,7 +329,3 @@ NTRUEncrypt128 = NTRUCipher.preset(397, 12, 156, 3, 1024)
 NTRUEncrypt160 = NTRUCipher.preset(491, 15, 210, 3, 1024)
 NTRUEncrypt192 = NTRUCipher.preset(587, 17, 306, 3, 1024)
 NTRUEncrypt256 = NTRUCipher.preset(787, 22, 462, 3, 2048)
-
-if __name__ == '__main__':
-    import tests
-    tests.test_ntru()

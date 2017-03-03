@@ -1,7 +1,5 @@
-all: build test
+all: build
 
 build:
 	$(MAKE) -C ntru
-
-test:
-	python ./tests.py
+	$(MAKE) -C keccak
