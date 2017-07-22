@@ -1,9 +1,9 @@
 #include "polynomial.h"
 
 
-polynomial *new_polynomial(int len) {
-	polynomial *p = (polynomial*) malloc(sizeof(polynomial));
-	*p = (polynomial) {
+Polynomial *new_polynomial(int len) {
+	Polynomial *p = (Polynomial*) malloc(sizeof(Polynomial));
+	*p = (Polynomial) {
 		.len = len,
 		.coeffs = calloc(sizeof(*p->coeffs), len)
 	};
@@ -11,19 +11,19 @@ polynomial *new_polynomial(int len) {
 }
 
 
-void free_polynomial(polynomial *p) {
+void free_polynomial(Polynomial *p) {
 	free(p->coeffs);
 	free(p);
 }
 
 
-polynomial *from_PyTuple(PyObject *pyTuple) {
+Polynomial *from_PyTuple(PyObject *pyTuple) {
 	int tupleSize = PyTuple_Size(pyTuple);
-	polynomial *ret = new_polynomial(tupleSize);
+	Polynomial *ret = new_polynomial(tupleSize);
 	for (int i = 0; i < tupleSize; i ++) {
 	   PyObject *tupleItem = PyTuple_GetItem(pyTuple, i);
-	   if (PyInt_Check(tupleItem)) {
-	      ret->coeffs[i] = PyInt_AsLong(tupleItem);
+	   if (PyLong_Check(tupleItem)) {
+	      ret->coeffs[i] = PyLong_AsLong(tupleItem);
 	   } else {
 	      printf("Error: tuple contains a non-int value");
 	      exit(1);
@@ -33,17 +33,17 @@ polynomial *from_PyTuple(PyObject *pyTuple) {
 }
 
 
-PyObject *to_PyTuple(polynomial *poly) {
+PyObject *to_PyTuple(Polynomial *poly) {
 	PyObject *ret = PyTuple_New(poly->len);
 	for (int i = 0; i < poly->len; i ++) {
-		PyTuple_SetItem(ret, i, PyInt_FromLong(poly->coeffs[i]));
+		PyTuple_SetItem(ret, i, PyLong_FromLong(poly->coeffs[i]));
 	}
 	free_polynomial(poly);
 	return ret;
 }
 
 
-void prettyprint(polynomial p) {
+void prettyprint(Polynomial p) {
 	for (int i = 0; i < p.len; i ++) {
 		printf("%d ", p.coeffs[i]);
 	}
@@ -51,7 +51,7 @@ void prettyprint(polynomial p) {
 }
 
 
-void c_rshift(polynomial p, int n, polynomial *o) {
+void c_rshift(Polynomial p, int n, Polynomial *o) {
 	void reverse(int arr[], int start, int end) {
 		if (start >= end)
 	    	return;
@@ -68,23 +68,23 @@ void c_rshift(polynomial p, int n, polynomial *o) {
 	reverse(o->coeffs, n, o->len - 1);
 }
 PyObject *rshift(PyObject *P, int n) {
-	polynomial *p = from_PyTuple(P);
+	Polynomial *p = from_PyTuple(P);
 	c_rshift(*p, n, p);
 	return to_PyTuple(p);
 }
 
 
-void c_lshift(polynomial p, int n, polynomial *o) {
+void c_lshift(Polynomial p, int n, Polynomial *o) {
 	c_rshift(p, mod(-n, p.len), o);
 }
 PyObject *lshift(PyObject *P, int n) {
-	polynomial *p = from_PyTuple(P);
+	Polynomial *p = from_PyTuple(P);
 	c_lshift(*p, n, p);
 	return to_PyTuple(p);
 }
 
 
-int c_degree(polynomial p) {
+int c_degree(Polynomial p) {
 	if (p.len == 0) {
 		return 0;
 	} else if (p.coeffs[order(p)] == 0) {
@@ -99,62 +99,62 @@ int degree(PyObject *P) {
 }
 
 
-void c_centerlift(polynomial p, int n, polynomial *o) {
+void c_centerlift(Polynomial p, int n, Polynomial *o) {
 	for (int i = 0; i < p.len; i ++) {
 		o->coeffs[i] = p.coeffs[i] > (float)(n / 2.) ? p.coeffs[i] - n : p.coeffs[i];
 	}
 }
 PyObject *centerlift(PyObject *P, int n) {
-	polynomial *p = from_PyTuple(P);
+	Polynomial *p = from_PyTuple(P);
 	c_centerlift(*p, n, p);
 	return to_PyTuple(p);
 }
 
 
-void c_s_add(polynomial p, int x, polynomial *o) {
+void c_s_add(Polynomial p, int x, Polynomial *o) {
 	if (o->coeffs != p.coeffs) {
 		memcpy(o->coeffs, p.coeffs, p.len * sizeof(int));
 	}
 	o->coeffs[0] += x;
 }
 PyObject *s_add(PyObject *P, int x) {
-	polynomial *p = from_PyTuple(P);
+	Polynomial *p = from_PyTuple(P);
 	c_s_add(*p, x, p);
 	return to_PyTuple(p);
 }
 
 
-void c_s_mul(polynomial p, int x, polynomial *o) {
+void c_s_mul(Polynomial p, int x, Polynomial *o) {
 	for (int i = 0; i < p.len; i ++) {
 		o->coeffs[i] = p.coeffs[i] * x;
 	}
 }
 PyObject *s_mul(PyObject *P, int x) {
-	polynomial *p = from_PyTuple(P);
+	Polynomial *p = from_PyTuple(P);
 	c_s_mul(*p, x, p);
 	return to_PyTuple(p);
 }
 
 
-void c_s_mod(polynomial p, int x, polynomial *o) {
+void c_s_mod(Polynomial p, int x, Polynomial *o) {
 	for (int i = 0; i < p.len; i ++) {
 		o->coeffs[i] = mod(p.coeffs[i], x);
 	}
 }
 PyObject *s_mod(PyObject *P, int x) {
-	polynomial *p = from_PyTuple(P);
+	Polynomial *p = from_PyTuple(P);
 	c_s_mod(*p, x, p);
 	return to_PyTuple(p);
 }
 
 
-void c_v_add(polynomial p, polynomial q, polynomial *o) {
+void c_v_add(Polynomial p, Polynomial q, Polynomial *o) {
 	for (int i = 0; i < p.len; i ++) {
 		o->coeffs[i] = p.coeffs[i] + q.coeffs[i];
 	}
 }
 PyObject *v_add(PyObject *P, PyObject *Q) {
-	polynomial *p = from_PyTuple(P),
+	Polynomial *p = from_PyTuple(P),
 	           *q = from_PyTuple(Q),
 			   *r = new_polynomial(p->len);
 	c_v_add(*p, *q, r);
@@ -163,13 +163,13 @@ PyObject *v_add(PyObject *P, PyObject *Q) {
 }
 
 
-void c_v_sub(polynomial p, polynomial q, polynomial *o) {
+void c_v_sub(Polynomial p, Polynomial q, Polynomial *o) {
 	for (int i = 0; i < p.len; i ++) {
 		o->coeffs[i] = p.coeffs[i] - q.coeffs[i];
 	}
 }
 PyObject *v_sub(PyObject *P, PyObject *Q) {
-	polynomial *p = from_PyTuple(P),
+	Polynomial *p = from_PyTuple(P),
 	           *q = from_PyTuple(Q),
 			   *r = new_polynomial(p->len);
 	c_v_sub(*p, *q, r);
@@ -178,7 +178,7 @@ PyObject *v_sub(PyObject *P, PyObject *Q) {
 }
 
 
-void c_v_mul(polynomial p, polynomial q, polynomial *o) {
+void c_v_mul(Polynomial p, Polynomial q, Polynomial *o) {
 	memset(o->coeffs, 0, o->len * sizeof(int));
 	for (int i = 0; i < p.len; i ++) {
 		for (int j = 0; j < q.len; j ++) {
@@ -187,7 +187,7 @@ void c_v_mul(polynomial p, polynomial q, polynomial *o) {
 	}
 }
 PyObject *v_mul(PyObject *P, PyObject *Q) {
-	polynomial *p = from_PyTuple(P),
+	Polynomial *p = from_PyTuple(P),
 	           *q = from_PyTuple(Q),
 			   *r = new_polynomial(p->len);
 	c_v_mul(*p, *q, r);
@@ -211,7 +211,7 @@ int inv(int a, int p) {
 }
 
 
-int is_zero(polynomial F) {
+int is_zero(Polynomial F) {
 	if (F.len > 0) {
 		F.len --;
 		F.coeffs += sizeof(int);
@@ -222,16 +222,16 @@ int is_zero(polynomial F) {
 }
 
 
-void swap(polynomial *a, polynomial *b) {
-    polynomial temp = *a;
+void swap(Polynomial *a, Polynomial *b) {
+    Polynomial temp = *a;
     *a = *b;
     *b = temp;
 }
 
 
-void c_inverse_modp(polynomial F, int p, polynomial *o) {
+void c_inverse_modp(Polynomial F, int p, Polynomial *o) {
 	int N = F.len, k = N, u;
-	polynomial *b = new_polynomial(N + 1),
+	Polynomial *b = new_polynomial(N + 1),
 	           *c = new_polynomial(N + 1),
 			   *f = new_polynomial(N + 1),
 			   *g = new_polynomial(N + 1),
@@ -240,7 +240,9 @@ void c_inverse_modp(polynomial F, int p, polynomial *o) {
 	b->coeffs[0] = 1;
 	memcpy(f->coeffs, F.coeffs, N * sizeof(int));
 	g->coeffs[0] = -1; g->coeffs[g->len - 1] = 1;
-
+	
+	// FIXME: Infinite loop in mod 2
+	// Loops when f = (1 0 ... 0 1) mod 2 (= 0 in Z2[X^N - 1])
 	while (true) {
 		while (c_degree(*f) != 0 && f->coeffs[0] == 0) {
 			c_lshift(*f, 1, f);
@@ -256,26 +258,26 @@ void c_inverse_modp(polynomial F, int p, polynomial *o) {
 			swap(f, g);
 			swap(b, c);
 		}
-
 		u = f->coeffs[0] * inv(g->coeffs[0], p);
 		c_s_mul(*g, u, t1); c_v_sub(*f, *t1, t2); c_s_mod(*t2, p, f);
 		c_s_mul(*c, u, t1); c_v_sub(*b, *t1, t2); c_s_mod(*t2, p, b);
+		c_s_mod(*g, p, g);  c_s_mod(*c, p, c);
 	}
 
 	if (f->coeffs[0] != 0) {
 		b->len --;
 		c_s_mul(*b, inv(f->coeffs[0], p), o);
 		c_lshift(*o, k % N, o);
-		free_polynomial(b); free_polynomial(c);
-		free_polynomial(f); free_polynomial(g);
-		free_polynomial(t1); free_polynomial(t2);
 	} else {
 		memset(o->coeffs, 0, o->len * sizeof(int));
 	}
+	free_polynomial(b); free_polynomial(c);
+	free_polynomial(f); free_polynomial(g);
+	free_polynomial(t1); free_polynomial(t2);
 	return;
 }
 PyObject *inverse_modp(PyObject *P, int n) {
-	polynomial *p = from_PyTuple(P);
+	Polynomial *p = from_PyTuple(P);
 	c_inverse_modp(*p, n, p);
 	if (is_zero(*p)) {
 		Py_INCREF(Py_None);
@@ -286,11 +288,9 @@ PyObject *inverse_modp(PyObject *P, int n) {
 }
 
 
-// WARNING - DOES NOT WORK
-// FIXME: Incorrectly inverts F
-void c_inverse_modpn(polynomial F, int pn, polynomial *o) {
-	int *factorise_pn(int pn) {
-		static int ret[2] = {2, 0};
+void c_inverse_modpn(Polynomial F, int pn, Polynomial *o) {
+	int *factorise_pn(int pn, int *ret) {
+		ret[0] = 2; ret[1] = 0;
 		while (pn % ret[0] != 0) {
 			ret[0] ++;
 		}
@@ -304,16 +304,17 @@ void c_inverse_modpn(polynomial F, int pn, polynomial *o) {
 	int pow(int x, int n) {
 		return n > 1 ? x * pow(x, n - 1) : x;
 	}
-
-	int *pr = factorise_pn(pn);
+	
+	int ret[2];
+	int *pr = factorise_pn(pn, ret);
 	int p = pr[0], r = pr[1];
 	c_inverse_modp(F, p, o);
 	if (!is_zero(*o)) {
-		polynomial *t1 = new_polynomial(F.len),
+		Polynomial *t1 = new_polynomial(F.len),
 				   *t2 = new_polynomial(F.len),
 				   *t3 = new_polynomial(F.len);
 		int n = 2;
-		while (r > 0) {
+		do {
 			c_v_mul(F, *o, t1);
 			c_s_add(*t1, -2, t2);
 			c_s_mul(*t2, -1, t2);
@@ -321,13 +322,13 @@ void c_inverse_modpn(polynomial F, int pn, polynomial *o) {
 			c_s_mod(*t3, pow(p, n), o);
 			r /= 2;
 			n *= 2;
-		}
+		} while (r > 1);
 		c_s_mod(*o, pn, o);
 		free_polynomial(t1); free_polynomial(t2); free_polynomial(t3);
 	}
 }
 PyObject *inverse_modpn(PyObject *P, int n) {
-	polynomial *p = from_PyTuple(P);
+	Polynomial *p = from_PyTuple(P);
 	c_inverse_modpn(*p, n, p);
 	if (is_zero(*p)) {
 		Py_INCREF(Py_None);
@@ -338,8 +339,8 @@ PyObject *inverse_modpn(PyObject *P, int n) {
 }
 
 
-int main() {
-	polynomial *f = new_polynomial(11),
+int main(void) {
+	Polynomial *f = new_polynomial(11),
 	           *g = new_polynomial(11),
 			   *fg = new_polynomial(11);
 

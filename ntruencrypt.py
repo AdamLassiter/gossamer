@@ -1,3 +1,5 @@
+#! /usr/bin/python3
+
 from random import randint
 from math import log
 from debug import debug
@@ -48,7 +50,7 @@ def str2base(string, base, N=0):
     """
     Converts a string to lists of ints, length N, in a given base
     """
-    unpadded_list = base_convert(list(bytearray(string)), 256, base)
+    unpadded_list = base_convert(bytearray(string, 'utf8'), 128, base)
     return split(unpadded_list, N) if N else [unpadded_list]
 
 
@@ -56,7 +58,7 @@ def base2str(lists, base):
     """
     Converts lists of ints in a given base to a string
     """
-    return str(bytearray(base_convert(join(lists), base, 256)))
+    return str(bytearray(base_convert(join(lists), base, 128)).decode('utf8'))
 
 
 class NTRUPolynomial(tuple):
@@ -68,8 +70,8 @@ class NTRUPolynomial(tuple):
         """
         return cls(*args)
 
-    def __init__(self, coeffs):
-        super(NTRUPolynomial, self).__init__(coeffs)
+    def __new__(cls, coeffs):
+        return super().__new__(cls, tuple(coeffs))
 
     def __rshift__(self, n):
         return self << -n
@@ -85,32 +87,6 @@ class NTRUPolynomial(tuple):
 
     def is_zero(self):
         return all(x == 0 for x in self)
-
-    def inverse_modpn(self, pn):
-        """
-        Finds a polynomial F' in the same ring as F such that F*F' = 1 mod p^n
-        Returns None if no such polynomial exists
-        """
-        def factorise_pn(pn):
-            p = 2
-            n = 0
-            while pn % p:
-                p += 1
-            while pn > 1:
-                pn /= p
-                n += 1
-            return p, n
-
-        p, r = factorise_pn(pn)
-        g = self.inverse_modp(p)
-        if g is not None:
-            n = 2
-            while r > 0:
-                g *= 2 - self * g
-                g %= p ** n
-                r /= 2
-                n *= 2
-        return g % pn if g else None
 
     try:
         # Try to use accelerated c library
@@ -142,6 +118,9 @@ class NTRUPolynomial(tuple):
 
         def inverse_modp(self, p):
             return self.new(self.cLib.inverse_modp(self, p))
+
+        def inverse_modpn(self, pn):
+            return self.new(self.cLib.inverse_modpn(self, pn))
 
     except Exception as ex:
         # Fallback to pure-python implementation
@@ -215,6 +194,32 @@ class NTRUPolynomial(tuple):
                 f = (f - g * u) % p
                 b = (b - c * u) % p
 
+        def inverse_modpn(self, pn):
+            """
+            Finds a polynomial F' in the same ring as F such that F*F' = 1 mod p^n
+            Returns None if no such polynomial exists
+            """
+            def factorise_pn(pn):
+                p = 2
+                n = 0
+                while pn % p:
+                    p += 1
+                while pn > 1:
+                    pn /= p
+                    n += 1
+                return p, n
+
+            p, r = factorise_pn(pn)
+            g = self.inverse_modp(p)
+            if g is not None:
+                n = 2
+                while r >= 1:
+                    g *= 2 - self * g
+                    g %= p ** n
+                    r /= 2
+                    n *= 2
+            return g % pn if g else None
+
 
 class NTRUCipher(object):
 
@@ -254,41 +259,34 @@ class NTRUCipher(object):
         h = (fq * g * params['p']) % params['q']
         return {'priv': f, 'pub': h}
 
+    def encrypt_poly(self, poly):
+        poly = poly.centerlift(self.params['p'])
+        r = self.random_poly(self.params)
+        e = r * self.key['pub'] + poly
+        e %= self.params['q']
+        return e.centerlift(self.params['q']) % self.params['p']
+
     def encrypt(self, text):
         """
         Encrypt a given string using the current public key and parameters
         """
-        def encrypt_p(poly):
-            poly = poly.centerlift(self.params['p'])
-            r = self.random_poly(self.params)
-            raise Exception()
-            # FIXME: pubkey is ([0],) ... why is this?
-            e = r * self.key['pub'] + poly
-            return e % self.params['q']
-        polys = [NTRUPolynomial(x) for x in str2base(
-            text, self.params['p'], self.params['N'])]
-        print "TEXT IS <%s>" % text
-        print "POLYS IS <%s>" % polys
-        # FIXME: print "\n".join([p for p in polys])
-        cipherpolys = map(encrypt_p, polys)
-        ciphertext = base2str(cipherpolys, self.params['q'])
-        return ciphertext
+        polys = [self.encrypt_poly(NTRUPolynomial(x))
+                 for x in str2base(text, self.params['p'], self.params['N'])]
+        return base2str(polys, self.params['q'])
+
+    def decrypt_poly(self, poly):
+        a = (self.key['priv'] * poly) % self.params['q']
+        a = a.centerlift(self.params['q'])
+        b = a % self.params['p']
+        return b
 
     def decrypt(self, text):
         """
         Decrypt a given string using the current private key and parameters
         """
-        def decrypt_p(poly):
-            a = (self.key['priv'] * poly) % self.params['q']
-            a = a.centerlift(self.params['q'])
-            b = a % self.params['p']
-            b = b.centerlift(self.params['p'])
-            return b
-        polys = [NTRUPolynomial(x) for x in str2base(
-            text, self.params['q'], self.params['N'])]
-        plainpolys = map(decrypt_p, polys)
-        plaintext = base2str(plainpolys, self.params['p'])
-        return plaintext
+        polys = [self.decrypt_poly(NTRUPolynomial(x))
+                 for x in str2base(text, self.params['q'], self.params['N'])]
+        return base2str(polys, self.params['p'])
 
     def pubkey(self):
         return base2str([self.key['pub'] % self.params['p']] + [[1]],
@@ -323,9 +321,10 @@ class NTRUCipher(object):
 
 
 # NTRUEncrypt parameter presets
-NTRUEncrypt80 = NTRUCipher.preset(251, 8, 72, 3, 256)
-NTRUEncrypt112 = NTRUCipher.preset(347, 11, 132, 3, 512)
-NTRUEncrypt128 = NTRUCipher.preset(397, 12, 156, 3, 1024)
-NTRUEncrypt160 = NTRUCipher.preset(491, 15, 210, 3, 1024)
-NTRUEncrypt192 = NTRUCipher.preset(587, 17, 306, 3, 1024)
-NTRUEncrypt256 = NTRUCipher.preset(787, 22, 462, 3, 2048)
+NTRUEncrypt80 = NTRUCipher.preset(251, 8, 72, 3, 3**8)
+NTRUEncrypt112 = NTRUCipher.preset(347, 11, 132, 3, 3**9)
+NTRUEncrypt128 = NTRUCipher.preset(397, 12, 156, 3, 3**10)
+NTRUEncrypt160 = NTRUCipher.preset(491, 15, 210, 3, 3**10)
+NTRUEncrypt192 = NTRUCipher.preset(587, 17, 306, 3, 3**10)
+NTRUEncrypt256 = NTRUCipher.preset(
+    787, 22, 462, 3, 3**11)  # 2048 HACK: Avoid powers of 2

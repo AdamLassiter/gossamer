@@ -1,3 +1,5 @@
+#! /usr/bin/python3
+
 from functools import wraps
 
 
@@ -35,7 +37,7 @@ def debug(func):
                 s = "%s%s(%s) -> %s" % str_args
                 return ret
             except Exception as e:
-                print e
+                print(e)
                 raise e
 
     return wrapper

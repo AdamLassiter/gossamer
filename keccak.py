@@ -1,3 +1,5 @@
+#! /usr/bin/python3
+
 from math import log
 from operator import xor
 from copy import deepcopy
@@ -95,8 +97,7 @@ def keccak_f(state):
         # iota
         A[0][0] ^= RC
 
-    l = int(log(state.lanew, 2))
-    nr = 12 + 2 * l
+    nr = 12 + 2 * int(log(state.lanew, 2))
 
     for ir in xrange(nr):
         round(state.s, RoundConstants[ir])
@@ -281,35 +282,32 @@ class KeccakHash(object):
     """
 
     def __init__(self, bitrate_bits, capacity_bits, output_bits):
-        # our in-absorption sponge. this is never given padding
-        assert bitrate_bits + \
-            capacity_bits in (25, 50, 100, 200, 400, 800, 1600)
-        self.sponge = KeccakSponge(bitrate_bits, bitrate_bits + capacity_bits,
-                                   multirate_padding,
-                                   keccak_f)
-
-        # hashlib interface members
-        assert output_bits % 8 == 0
-        self.digest_size = bits2bytes(output_bits)
-        self.block_size = bits2bytes(bitrate_bits)
-
-    def __repr__(self):
-        inf = (self.sponge.state.bitrate,
-               self.sponge.state.b - self.sponge.state.bitrate,
-               self.digest_size * 8)
-        return '<KeccakHash with r=%d, c=%d, image=%d>' % inf
+        # # our in-absorption sponge. this is never given padding
+        # assert bitrate_bits + \
+        #     capacity_bits in (25, 50, 100, 200, 400, 800, 1600)
+        # self.sponge = KeccakSponge(bitrate_bits, bitrate_bits + capacity_bits,
+        #                            multirate_padding,
+        #                            keccak_f)
+        #
+        # # hashlib interface members
+        # assert output_bits % 8 == 0
+        # self.digest_size = bits2bytes(output_bits)
+        # self.block_size = bits2bytes(bitrate_bits)
+        pass
 
     def copy(self):
         return deepcopy(self)
 
     def update(self, s):
-        self.sponge.absorb(s)
+        # self.sponge.absorb(s)
+        pass
 
     def digest(self):
-        finalised = self.sponge.copy()
-        finalised.absorb_final()
-        digest = finalised.squeeze(self.digest_size)
-        return KeccakState.bytes2str(digest)
+        # finalised = self.sponge.copy()
+        # finalised.absorb_final()
+        # digest = finalised.squeeze(self.digest_size)
+        # return KeccakState.bytes2str(digest)
+        pass
 
     def hexdigest(self):
         return self.digest().encode('hex')
@@ -320,12 +318,14 @@ class KeccakHash(object):
         Returns a factory function for the given bitrate, sponge capacity and output length.
         The function accepts an optional initial input, ala hashlib.
         """
-        def create(initial_input=None):
-            h = KeccakHash(bitrate_bits, capacity_bits, output_bits)
-            if initial_input is not None:
-                h.update(initial_input)
-            return h
-        return create
+        # def create(initial_input=None):
+        #     h = KeccakHash(bitrate_bits, capacity_bits, output_bits)
+        #     if initial_input is not None:
+        #         h.update(initial_input)
+        #     return h
+        # return create
+        pass
+
 
 # SHA3 parameter presets
 Keccak224 = KeccakHash.preset(1152, 448, 224)
@@ -334,5 +334,4 @@ Keccak384 = KeccakHash.preset(832, 768, 384)
 Keccak512 = KeccakHash.preset(576, 1024, 512)
 
 if __name__ == '__main__':
-    import tests
-    tests.test_keccak()
+    pass

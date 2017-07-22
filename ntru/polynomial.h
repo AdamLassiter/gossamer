@@ -4,10 +4,10 @@
 #define true 1
 
 
-typedef struct polynomial {
+typedef struct {
 	int len;
 	int  *coeffs;
-} polynomial;
+} Polynomial;
 
 
 PyObject *rshift(PyObject*, int);
