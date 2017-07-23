@@ -3,22 +3,22 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 
-KeccakHash *from_PyObject(PyObject *pyObject) {
+KeccakHash from_PyObject(PyObject *pyObject) {
     unsigned int rate = PyLong_AsUnsignedLong(PyObject_GetAttrString(pyObject, "rate")),
-                 blockSize = PyLong_AsUnsignedLong(PyObject_GetAttrString(pyObject, "blockSize")),
+                 block_size = PyLong_AsUnsignedLong(PyObject_GetAttrString(pyObject, "block_size")),
                  capacity = PyLong_AsUnsignedLong(PyObject_GetAttrString(pyObject, "capacity"));
-    KeccakHash *ret = new_hash(rate, capacity);
-    ret->blockSize = blockSize;
+    KeccakHash ret = c_new_hash(rate, capacity);
+    ret.block_size = block_size;
     PyObject *state = PyObject_GetAttrString(pyObject, "state"), *stateItem;
-    int stateSize = PySequence_Size(state);
-    if (stateSize != sizeof(ret->state)) {
-        printf("Error: sequence is of invalid size");
+    int stateSize = PyTuple_Size(state);
+    if (stateSize != sizeof(ret.state)) {
+        printf("Error: sequence is of invalid size (%d)\n", stateSize);
         exit(1);
     }
     for (int i = 0; i < stateSize; i++) {
-        stateItem = PySequence_GetItem(state, i);
+        stateItem = PyTuple_GetItem(state, i);
         if (PyLong_Check(stateItem))
-            ret->state[i] = PyLong_AsUnsignedLong(stateItem);
+            ret.state[i] = PyLong_AsUnsignedLong(stateItem);
         else {
             printf("Error: sequence contains a non-int value");
             exit(1);
@@ -27,14 +27,15 @@ KeccakHash *from_PyObject(PyObject *pyObject) {
     return ret;
 }
 
-void to_PyObject(PyObject *pyObject, KeccakHash *hash) {
-    PyObject_SetAttrString(pyObject, "rate", PyLong_FromUnsignedLong(hash->blockSize));
-    PyObject *state = PyTuple_New(sizeof(hash->state));
-    for (int i = 0; i < sizeof(hash->state); i++) {
-        PySequence_SetItem(state, i, PyLong_FromUnsignedLong(hash->state[i]));
+void to_PyObject(PyObject *pyObject, KeccakHash hash) {
+    PyObject_SetAttrString(pyObject, "rate", PyLong_FromUnsignedLong(hash.rate));
+    PyObject_SetAttrString(pyObject, "block_size", PyLong_FromUnsignedLong(hash.block_size));
+    PyObject_SetAttrString(pyObject, "capacity", PyLong_FromUnsignedLong(hash.capacity));
+    PyObject *stateObj = PyTuple_New(sizeof(hash.state));
+    for (int i = 0; i < sizeof(hash.state); i++) {
+        PyTuple_SetItem(stateObj, i, PyLong_FromUnsignedLong(hash.state[i]));
     }
-    PyObject_SetAttrString(pyObject, "state", state);
-    free(hash);
+    PyObject_SetAttrString(pyObject, "state", stateObj);
 }
 
 
@@ -107,89 +108,73 @@ void permute(KeccakHash *hash) {
 }
 
 
-KeccakHash *new_hash(unsigned int rate, unsigned int capacity) {
-    KeccakHash *hash = malloc(sizeof(hash));
-    *hash = (KeccakHash) {
+KeccakHash c_new_hash(unsigned int rate, unsigned int capacity) {
+    KeccakHash hash = (KeccakHash) {
+        .state = {0},
         .rate = rate,
-        .rateInBytes = rate / 8,
-        .blockSize = 0,
+        .rate_bytes = rate / 8,
+        .block_size = 0,
         .capacity = capacity,
-        .outputByteLen = capacity / 8
+        .digest_size = capacity / 8
     };
 
-    /* Initialize the state */
-    memset(hash->state, 0, sizeof(hash->state));
     return hash;
+}
+void new_hash(PyObject *hashObj, unsigned int rate, unsigned int capacity) {
+    to_PyObject(hashObj, c_new_hash(rate, capacity));
 }
 
 
-unsigned char *c_squeeze(KeccakHash *hash, unsigned char delimitedSuffix) {
+unsigned char *c_squeeze(KeccakHash hash) {
     /* Do the padding and switch to the squeezing phase */
-    /* Absorb the last few bits and add the first bit of padding (which coincides with the delimiter in delimitedSuffix) */
-    hash->state[hash->blockSize] ^= delimitedSuffix;
-    /* If the first bit of padding is at position rate-1, we need a whole new block for the second bit of padding */
-    if (((delimitedSuffix & 0x80) != 0) && (hash->blockSize == (hash->rateInBytes-1)))
-        permute(hash);
+    /* Absorb the last few bits and add the first bit of padding (which coincides with the delimiter 0x06) */
+    hash.state[hash.block_size] ^= 0x06;
     /* Add the second bit of padding */
-    hash->state[hash->rateInBytes-1] ^= 0x80;
+    hash.state[hash.rate_bytes-1] ^= 0x80;
     /* Switch to the squeezing phase */
-    permute(hash);
+    permute(&hash);
 
     /* Squeeze out all the output blocks */
-    unsigned int outputByteLen = hash->outputByteLen;
-    unsigned char *output = malloc(hash->outputByteLen * sizeof(*output)), *outputPtr = output;
-    while (outputByteLen > 0) {
-        hash->blockSize = MIN(outputByteLen, hash->rateInBytes);
-        memcpy(outputPtr, hash->state, hash->blockSize);
-        outputPtr += hash->blockSize;
-        outputByteLen -= hash->blockSize;
+    unsigned int digest_size = hash.digest_size;
+    unsigned char *output = malloc(hash.digest_size * sizeof(*output) + 1), *outputPtr = output;
+    while (digest_size > 0) {
+        hash.block_size = MIN(digest_size, hash.rate_bytes);
+        memcpy(outputPtr, hash.state, hash.block_size);
+        outputPtr += hash.block_size;
+        digest_size -= hash.block_size;
 
-        if (outputByteLen > 0)
-            permute(hash);
+        if (digest_size > 0)
+            permute(&hash);
     }
     return output;
 }
-unsigned char *squeeze(PyObject *hashObject, unsigned char delimitedSuffix) {
-    KeccakHash *hash = from_PyObject(hashObject);
-    unsigned char *ret = c_squeeze(hash, delimitedSuffix);
+PyObject *squeeze(PyObject *hashObject) {
+    KeccakHash hash = from_PyObject(hashObject);
+    PyObject *ret = PyBytes_FromStringAndSize((char *) c_squeeze(hash), hash.digest_size);
     to_PyObject(hashObject, hash);
     return ret;
 }
 
 
-void c_absorb(KeccakHash *hash, unsigned char *input, unsigned long long int inputByteLen) {
+void c_absorb(KeccakHash hash, unsigned char *input, unsigned long long int inputByteLen) {
     /* Absorb all the input blocks */
     while (inputByteLen > 0) {
-        hash->blockSize = MIN(inputByteLen, hash->rateInBytes);
-        for (int i = 0; i < hash->blockSize; i++)
-            hash->state[i] ^= input[i];
-        input += hash->blockSize;
-        inputByteLen -= hash->blockSize;
+        hash.block_size = MIN(inputByteLen, hash.rate_bytes);
+        for (int i = 0; i < hash.block_size; i++)
+            hash.state[i] ^= input[i];
+        input += hash.block_size;
+        inputByteLen -= hash.block_size;
 
-        if (hash->blockSize == hash->rateInBytes) {
-            permute(hash);
-            hash->blockSize = 0;
+        if (hash.block_size == hash.rate_bytes) {
+            permute(&hash);
+            hash.block_size = 0;
         }
     }
 }
-void absorb(PyObject *hashObject, PyObject *unicodeObj) {
-    if (PyUnicode_READY(unicodeObj) == 0) {
-        int size = PyUnicode_GET_LENGTH(unicodeObj);
-        switch (PyUnicode_KIND(unicodeObj)) {
-            case PyUnicode_4BYTE_KIND:
-                size *= 2;
-            case PyUnicode_2BYTE_KIND:
-                size *= 2;
-            default:
-                break;
-        }
-        unsigned char *input = PyUnicode_DATA(unicodeObj);
-        KeccakHash *hash = from_PyObject(hashObject);
-        c_absorb(hash, input, size);
-        to_PyObject(hashObject, hash);
-        return;
-    } else {
-        printf("Error: bad malloc call for unicode string");
-        exit(1);
-    }
+void absorb(PyObject *hashObject, PyObject *bytesObj) {
+    int size = PyBytes_Size(bytesObj);
+    unsigned char *input = (unsigned char *) PyBytes_AsString(bytesObj);
+    KeccakHash hash = from_PyObject(hashObject);
+    c_absorb(hash, input, size);
+    to_PyObject(hashObject, hash);
 }

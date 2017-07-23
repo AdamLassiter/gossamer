@@ -25,7 +25,7 @@ Polynomial *from_PyTuple(PyObject *pyTuple) {
 	   if (PyLong_Check(tupleItem)) {
 	      ret->coeffs[i] = PyLong_AsLong(tupleItem);
 	   } else {
-	      printf("Error: tuple contains a non-int value");
+	      printf("Error: tuple contains a non-int value\n");
 	      exit(1);
 	   }
 	}

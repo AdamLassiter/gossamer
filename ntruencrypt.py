@@ -62,6 +62,7 @@ def base2str(lists, base):
 
 
 class NTRUPolynomial(tuple):
+    import ntru.polynomial as cLib
 
     @classmethod
     def new(cls, *args):
@@ -88,137 +89,35 @@ class NTRUPolynomial(tuple):
     def is_zero(self):
         return all(x == 0 for x in self)
 
-    try:
-        # Try to use accelerated c library
-        import ntru.polynomial as cLib
+    def __lshift__(self, n):
+        return self.new(self.cLib.lshift(self, n))
 
-        def __lshift__(self, n):
-            return self.new(self.cLib.lshift(self, n))
+    def __add__(self, other):
+        if isinstance(other, NTRUPolynomial):
+            return self.new(self.cLib.v_add(self, other))
+        else:
+            return self.new(self.cLib.s_add(self, other))
 
-        def __add__(self, other):
-            if isinstance(other, NTRUPolynomial):
-                return self.new(self.cLib.v_add(self, other))
-            else:
-                return self.new(self.cLib.s_add(self, other))
+    def __mul__(self, other):
+        if isinstance(other, NTRUPolynomial):
+            return self.new(self.cLib.v_mul(self, other))
+        else:
+            return self.new(self.cLib.s_mul(self, other))
 
-        def __mul__(self, other):
-            if isinstance(other, NTRUPolynomial):
-                return self.new(self.cLib.v_mul(self, other))
-            else:
-                return self.new(self.cLib.s_mul(self, other))
+    def __mod__(self, other):
+        return self.new(self.cLib.s_mod(self, other))
 
-        def __mod__(self, other):
-            return self.new(self.cLib.s_mod(self, other))
+    def centerlift(self, n):
+        return self.new(self.cLib.centerlift(self, n))
 
-        def centerlift(self, n):
-            return self.new(self.cLib.centerlift(self, n))
+    def degree(self):
+        return self.cLib.degree(self)
 
-        def degree(self):
-            return self.cLib.degree(self)
+    def inverse_modp(self, p):
+        return self.new(self.cLib.inverse_modp(self, p))
 
-        def inverse_modp(self, p):
-            return self.new(self.cLib.inverse_modp(self, p))
-
-        def inverse_modpn(self, pn):
-            return self.new(self.cLib.inverse_modpn(self, pn))
-
-    except Exception as ex:
-        # Fallback to pure-python implementation
-
-        def __lshift__(self, n):
-            return self.new(self[n:] + self[:n])
-
-        def __add__(self, other):
-            if isinstance(other, NTRUPolynomial):
-                return self.new(map(lambda x, y: x + y, self, other))
-            else:
-                return self + self.new([other] + [0 for x in self[:-1]])
-
-        def __mul__(self, other):
-            if isinstance(other, NTRUPolynomial):
-                return self.new(sum((other * self[i]) >> i for i in range(len(self))))
-            else:
-                return self.new(map(lambda x: other * x, self))
-
-        def __mod__(self, other):
-            return self.new(map(lambda x: x % other, self))
-
-        def centerlift(self, n):
-            return self.new(map(lambda x: x - n if x > n / 2. else x, self))
-
-        def degree(self):
-            if self.is_zero():
-                return 0
-            elif self[-1] == 0:
-                return self.new(self[:-1]).degree()
-            else:
-                return len(self) - 1
-
-        def inverse_modp(self, p):
-            """
-            Finds a polynomial F' in the same ring as F such that F*F' = 1 mod p
-            Returns None if no such polynomial exists
-            """
-            def inv(a, p):
-                def gcd(a, b):
-                    if a == 0:
-                        return b, 0, 1
-                    else:
-                        g, y, x = gcd(b % a, a)
-                        return g, x - (b // a) * y, y
-                g, x, y = gcd(a % p, p)
-                if g != 1:
-                    return 0
-                else:
-                    return x % p
-
-            k, N = 0, len(self)
-            c = self.new([0] * (N + 1))
-            b = c + 1
-            f = self.new(self[:] + (0,))
-            g = (c + 1 << 1) - 1
-            while True:
-                while f[0] == 0 and not f.is_zero():
-                    f <<= 1
-                    c >>= 1
-                    k += 1
-                if f.degree() == 0:
-                    inv_f = inv(f[0], p)
-                    if inv_f:
-                        return self.new((b * inv_f)[:-1]) << k % N
-                    else:
-                        return None
-                if f.degree() < g.degree():
-                    f, g, b, c = g, f, c, b
-                u = f[0] * inv(g[0], p)
-                f = (f - g * u) % p
-                b = (b - c * u) % p
-
-        def inverse_modpn(self, pn):
-            """
-            Finds a polynomial F' in the same ring as F such that F*F' = 1 mod p^n
-            Returns None if no such polynomial exists
-            """
-            def factorise_pn(pn):
-                p = 2
-                n = 0
-                while pn % p:
-                    p += 1
-                while pn > 1:
-                    pn /= p
-                    n += 1
-                return p, n
-
-            p, r = factorise_pn(pn)
-            g = self.inverse_modp(p)
-            if g is not None:
-                n = 2
-                while r >= 1:
-                    g *= 2 - self * g
-                    g %= p ** n
-                    r /= 2
-                    n *= 2
-            return g % pn if g else None
+    def inverse_modpn(self, pn):
+        return self.new(self.cLib.inverse_modpn(self, pn))
 
 
 class NTRUCipher(object):
@@ -326,5 +225,5 @@ NTRUEncrypt112 = NTRUCipher.preset(347, 11, 132, 3, 3**9)
 NTRUEncrypt128 = NTRUCipher.preset(397, 12, 156, 3, 3**10)
 NTRUEncrypt160 = NTRUCipher.preset(491, 15, 210, 3, 3**10)
 NTRUEncrypt192 = NTRUCipher.preset(587, 17, 306, 3, 3**10)
-NTRUEncrypt256 = NTRUCipher.preset(
-    787, 22, 462, 3, 3**11)  # 2048 HACK: Avoid powers of 2
+NTRUEncrypt256 = NTRUCipher.preset(787, 22, 462, 3, 3**11)
+# HACK: Avoid powers of 2

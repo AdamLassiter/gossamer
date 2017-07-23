@@ -51,13 +51,19 @@ typedef UINT64 tKeccakLane;
 
 typedef struct {
     UINT8 state[200];
-    unsigned int rate, rateInBytes, blockSize, capacity, outputByteLen;
+    unsigned int rate, rate_bytes, block_size, capacity, digest_size;
 } KeccakHash;
 
+KeccakHash from_PyObject(PyObject *);
+void to_PyObject(PyObject *, KeccakHash);
 
-KeccakHash *new_hash(unsigned int, unsigned int);
+KeccakHash c_new_hash(unsigned int, unsigned int);
+void new_hash(PyObject *, unsigned int, unsigned int);
 
-extern unsigned char *squeeze(PyObject*, unsigned char);
-extern void absorb(PyObject*, PyObject*);
+unsigned char *c_squeeze(KeccakHash);
+PyObject *squeeze(PyObject *);
+
+void c_absorb(KeccakHash, unsigned char *, unsigned long long int);
+void absorb(PyObject *, PyObject *);
 
 #endif /* end of include guard: KECCAK_H */
