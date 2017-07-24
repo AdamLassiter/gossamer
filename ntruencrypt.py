@@ -62,7 +62,7 @@ def base2str(lists, base):
 
 
 class NTRUPolynomial(tuple):
-    import ntru.polynomial as cLib
+    import c_ntruencrypt.polynomial as cLib
 
     @classmethod
     def new(cls, *args):
@@ -211,7 +211,7 @@ class NTRUCipher(object):
         p  - Prime modulus for polynomial ring
         q  - Prime-power modulus for polynomial ring
         """
-        # TODO Should actually check against Hw
+        # TODO NTRU preset should check against Hw
         def create(keypair=None):
             layout = ['N', 'd', 'Hw', 'p', 'q']
             c = NTRUCipher(dict(zip(layout, (N, d, Hw, p, q))), keypair)
@@ -226,4 +226,4 @@ NTRUEncrypt128 = NTRUCipher.preset(397, 12, 156, 3, 3**10)
 NTRUEncrypt160 = NTRUCipher.preset(491, 15, 210, 3, 3**10)
 NTRUEncrypt192 = NTRUCipher.preset(587, 17, 306, 3, 3**10)
 NTRUEncrypt256 = NTRUCipher.preset(787, 22, 462, 3, 3**11)
-# HACK: Avoid powers of 2
+# HACK: Avoid powers of 2 for ntru q-vals

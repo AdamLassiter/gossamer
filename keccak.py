@@ -3,7 +3,7 @@ from copy import deepcopy
 
 
 class KeccakHash:
-    import keccak_p.keccak as cLib
+    import c_keccak.keccak as cLib
 
     def __init__(self, rate, capacity):
         self.cLib.new_hash(self, rate, capacity)

@@ -1,5 +1,7 @@
 #include "polynomial.h"
 
+// TODO: Implement full NTRU algorithm in C, then rename to ntruencrypt.c
+
 
 Polynomial *new_polynomial(int len) {
 	Polynomial *p = (Polynomial*) malloc(sizeof(Polynomial));
@@ -241,7 +243,7 @@ void c_inverse_modp(Polynomial F, int p, Polynomial *o) {
 	memcpy(f->coeffs, F.coeffs, N * sizeof(int));
 	g->coeffs[0] = -1; g->coeffs[g->len - 1] = 1;
 	
-	// FIXME: Infinite loop in mod 2
+	// FIXME: c_inverse_modp infinite loop in mod 2
 	// Loops when f = (1 0 ... 0 1) mod 2 (= 0 in Z2[X^N - 1])
 	while (true) {
 		while (c_degree(*f) != 0 && f->coeffs[0] == 0) {

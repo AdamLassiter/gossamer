@@ -1,8 +1,9 @@
 all: build test
 
 build:
-	$(MAKE) -C ntru
-	$(MAKE) -C keccak_p
+	$(MAKE) -C c_ntruencrypt
+	$(MAKE) -C c_keccak
+	$(MAKE) -C c_feistel
 
 test: build
 	python3 test.py

@@ -125,7 +125,7 @@ void new_hash(PyObject *hashObj, unsigned int rate, unsigned int capacity) {
 }
 
 
-unsigned char *c_squeeze(KeccakHash hash) {
+string c_squeeze(KeccakHash hash) {
     /* Do the padding and switch to the squeezing phase */
     /* Absorb the last few bits and add the first bit of padding (which coincides with the delimiter 0x06) */
     hash.state[hash.block_size] ^= 0x06;
@@ -136,7 +136,11 @@ unsigned char *c_squeeze(KeccakHash hash) {
 
     /* Squeeze out all the output blocks */
     unsigned int digest_size = hash.digest_size;
-    unsigned char *output = malloc(hash.digest_size * sizeof(*output) + 1), *outputPtr = output;
+    string output = (string) {
+        .str = malloc(hash.digest_size + 1), 
+        .len = hash.digest_size
+    };
+    unsigned char *outputPtr = output.str;
     while (digest_size > 0) {
         hash.block_size = MIN(digest_size, hash.rate_bytes);
         memcpy(outputPtr, hash.state, hash.block_size);
@@ -150,20 +154,22 @@ unsigned char *c_squeeze(KeccakHash hash) {
 }
 PyObject *squeeze(PyObject *hashObject) {
     KeccakHash hash = from_PyObject(hashObject);
-    PyObject *ret = PyBytes_FromStringAndSize((char *) c_squeeze(hash), hash.digest_size);
+    string squeezed = c_squeeze(hash);
+    PyObject *ret = PyBytes_FromStringAndSize((char*) squeezed.str, squeezed.len);
     to_PyObject(hashObject, hash);
+    free(squeezed.str);
     return ret;
 }
 
 
-void c_absorb(KeccakHash hash, unsigned char *input, unsigned long long int inputByteLen) {
+void c_absorb(KeccakHash hash, string input) {
     /* Absorb all the input blocks */
-    while (inputByteLen > 0) {
-        hash.block_size = MIN(inputByteLen, hash.rate_bytes);
+    while (input.len > 0) {
+        hash.block_size = MIN(input.len, hash.rate_bytes);
         for (int i = 0; i < hash.block_size; i++)
-            hash.state[i] ^= input[i];
-        input += hash.block_size;
-        inputByteLen -= hash.block_size;
+            hash.state[i] ^= input.str[i];
+        input.str += hash.block_size;
+        input.len -= hash.block_size;
 
         if (hash.block_size == hash.rate_bytes) {
             permute(&hash);
@@ -173,8 +179,19 @@ void c_absorb(KeccakHash hash, unsigned char *input, unsigned long long int inpu
 }
 void absorb(PyObject *hashObject, PyObject *bytesObj) {
     int size = PyBytes_Size(bytesObj);
-    unsigned char *input = (unsigned char *) PyBytes_AsString(bytesObj);
+    string input = (string) {
+        .str = (unsigned char *) PyBytes_AsString(bytesObj),
+        .len = size
+    };
     KeccakHash hash = from_PyObject(hashObject);
-    c_absorb(hash, input, size);
+    c_absorb(hash, input);
     to_PyObject(hashObject, hash);
+    free(input.str);
+}
+
+
+string c_keccak(string input, int out_bytes) {
+    KeccakHash hash = c_new_hash(input.len, out_bytes);
+    c_absorb(hash, input);
+    return c_squeeze(hash);
 }
