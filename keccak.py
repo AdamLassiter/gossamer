@@ -2,7 +2,7 @@
 from copy import deepcopy
 
 
-class KeccakHash:
+class KeccakHash(object):
     import c_keccak.keccak as cLib
 
     def __init__(self, rate, capacity):

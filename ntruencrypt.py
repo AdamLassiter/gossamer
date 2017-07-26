@@ -46,19 +46,19 @@ def join(padded_lists):
     return unpadded_list[:-1]
 
 
-def str2base(string, base, N=0):
+def bytes2base(bytes, base, N=0):
     """
     Converts a string to lists of ints, length N, in a given base
     """
-    unpadded_list = base_convert(bytearray(string, 'utf8'), 128, base)
+    unpadded_list = base_convert(bytes, 256, base)
     return split(unpadded_list, N) if N else [unpadded_list]
 
 
-def base2str(lists, base):
+def base2bytes(lists, base):
     """
     Converts lists of ints in a given base to a string
     """
-    return str(bytearray(base_convert(join(lists), base, 128)).decode('utf8'))
+    return bytes(base_convert(join(lists), base, 256))
 
 
 class NTRUPolynomial(tuple):
@@ -131,7 +131,7 @@ class NTRUCipher(object):
             (self.key['priv'], self.key['pub'], self.params)
 
     @staticmethod
-    def random_poly(params):
+    def __random_poly(params):
         # In need of improvement to meet spec, see docs/ntru/ntru_params.pdf
         k = [0 for n in range(params['N'])]
         d1, d2 = params['d'], params['d'] - 1
@@ -150,17 +150,17 @@ class NTRUCipher(object):
         """
 
         while True:
-            f = NTRUCipher.random_poly(params) * params['p'] + 1
+            f = NTRUCipher.__random_poly(params) * params['p'] + 1
             fq = f.inverse_modpn(params['q'])
             if fq is not None:
                 break
-        g = NTRUCipher.random_poly(params)
+        g = NTRUCipher.__random_poly(params)
         h = (fq * g * params['p']) % params['q']
         return {'priv': f, 'pub': h}
 
-    def encrypt_poly(self, poly):
+    def __encrypt_poly(self, poly):
         poly = poly.centerlift(self.params['p'])
-        r = self.random_poly(self.params)
+        r = self.__random_poly(self.params)
         e = r * self.key['pub'] + poly
         e %= self.params['q']
         return e.centerlift(self.params['q']) % self.params['p']
@@ -169,9 +169,9 @@ class NTRUCipher(object):
         """
         Encrypt a given string using the current public key and parameters
         """
-        polys = [self.encrypt_poly(NTRUPolynomial(x))
-                 for x in str2base(text, self.params['p'], self.params['N'])]
-        return base2str(polys, self.params['q'])
+        polys = [self.__encrypt_poly(NTRUPolynomial(x))
+                 for x in str2base(bytes(text, 'utf8'), self.params['p'], self.params['N'])]
+        return base2str(polys, self.params['q']).decode('raw_unicode_escape')
 
     def decrypt_poly(self, poly):
         a = (self.key['priv'] * poly) % self.params['q']
@@ -184,8 +184,8 @@ class NTRUCipher(object):
         Decrypt a given string using the current private key and parameters
         """
         polys = [self.decrypt_poly(NTRUPolynomial(x))
-                 for x in str2base(text, self.params['q'], self.params['N'])]
-        return base2str(polys, self.params['p'])
+                 for x in str2base(bytes(text, 'raw_unicode_escape'), self.params['q'], self.params['N'])]
+        return base2bytes(polys, self.params['p']).decode('utf8')
 
     def pubkey(self):
         return base2str([self.key['pub'] % self.params['p']] + [[1]],
