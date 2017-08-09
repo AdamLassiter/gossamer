@@ -99,9 +99,9 @@ except __builtin__.Exception:
     _newclass = 0
 
 
-def f_encrpyt(arg1: 'PyObject *', arg2: 'PyObject *', arg3: 'PyObject *', arg4: 'int') -> "PyObject *":
-    return _feistel.f_encrpyt(arg1, arg2, arg3, arg4)
-f_encrpyt = _feistel.f_encrpyt
+def f_encrypt(arg1: 'PyObject *', arg2: 'PyObject *', arg3: 'PyObject *', arg4: 'int') -> "PyObject *":
+    return _feistel.f_encrypt(arg1, arg2, arg3, arg4)
+f_encrypt = _feistel.f_encrypt
 
 def f_decrypt(arg1: 'PyObject *', arg2: 'PyObject *', arg3: 'PyObject *', arg4: 'int') -> "PyObject *":
     return _feistel.f_decrypt(arg1, arg2, arg3, arg4)
