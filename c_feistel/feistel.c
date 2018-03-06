@@ -19,7 +19,9 @@ string hash_feistel_block(string input, string key, string output, hash_func has
     string buffer = new_string(2 * input.len);
     string left, right, *in, *out, hashed;
     memcpy(output.str, input.str, input.len);
-    for (int round_nmbr = forward? 0:FEISTEL_ROUNDS-1; forward? round_nmbr<FEISTEL_ROUNDS:round_nmbr>=0; forward? round_nmbr++:round_nmbr--) {
+    for (int round_nmbr = forward? 0:FEISTEL_ROUNDS-1;
+         forward? round_nmbr<FEISTEL_ROUNDS:round_nmbr>=0;
+         forward? round_nmbr++:round_nmbr--) {
         left = (string) {
             .str = output.str,
             .len = output.len / 2

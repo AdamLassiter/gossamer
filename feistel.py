@@ -1,4 +1,4 @@
-#! /usr/bin/python3
+#! /usr/bin/env python3
 
 
 class FeistelCipher(object):
@@ -14,11 +14,11 @@ class FeistelCipher(object):
     __pad_delimiter = 0xFF
     __pad_byte = 0x00
 
-    def __init__(self, key):
+    def __init__(self, key: str) -> None:
         self.key = key
 
-    def encrypt(self, text, iv, mode):
-        def pad(_bytes, len_multiple):
+    def encrypt(self, text: str, iv: str, mode: int) -> str:
+        def pad(_bytes: bytes, len_multiple: int):
             return _bytes + bytes([self.__pad_delimiter] +
                                   [self.__pad_byte for _ in range((len(_bytes) + 1) % len_multiple)])
         if mode not in self.__modes:
@@ -26,7 +26,7 @@ class FeistelCipher(object):
         _bytes = self.cLib.f_encrypt(bytes(text, 'utf8'), self.key, iv, mode)
         return _bytes.decode('raw_unicode_escape')
 
-    def decrypt(self, text, iv, mode):
+    def decrypt(self, text: str, iv: str, mode: int) -> str:
         def unpad(_bytes):
             return _bytes.rstrip(self.__pad_byte)[:-1]
         if mode not in self.__modes:

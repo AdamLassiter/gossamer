@@ -1,5 +1,6 @@
-#! /usr/bin/python3
+#! /usr/bin/env python3
 
+from collections.abc import Callable
 from functools import wraps
 
 
@@ -19,7 +20,7 @@ class depth_handler:
 __debug_depth = depth_handler()
 
 
-def debug(func):
+def debug(func: Callable) -> Callable:
 
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -34,7 +35,7 @@ def debug(func):
                             func.__name__,
                             ", ".join(map(str, func_args)),
                             ret)
-                s = "%s%s(%s) -> %s" % str_args
+                print("%s%s(%s) -> %s" % str_args)
                 return ret
             except Exception as e:
                 print(e)

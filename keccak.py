@@ -1,42 +1,45 @@
-#! /usr/bin/python3
+#! /usr/bin/env python3
+
+from __future__ import annotations
+from collections.abc import Callable
 from copy import deepcopy
 
 
 class KeccakHash(object):
     import c_keccak.keccak as cLib
 
-    def __init__(self, rate, capacity):
+    def __init__(self, rate: int, capacity: int) -> None:
         self.cLib.new_hash(self, rate, capacity)
 
-    def __squeeze(self):
+    def __squeeze(self) -> str:
         return self.cLib.squeeze(self)
 
-    def __absorb(self, bytes):
-        self.cLib.absorb(self, bytes)
+    def __absorb(self, _bytes: bytes):
+        self.cLib.absorb(self, _bytes)
 
-    def copy(self):
+    def copy(self) -> KeccakHash:
         return deepcopy(self)
 
-    def update(self, s):
+    def update(self, s: str):
         self.__absorb(bytes(s, 'utf8'))
 
-    def digest(self):
+    def digest(self) -> str:
         finalised = self.copy()
         digest = finalised.__squeeze()
         return digest.decode('raw_unicode_escape')
 
-    def hexdigest(self):
+    def hexdigest(self) -> str:
         finalised = self.copy()
         digest = finalised.__squeeze()
         return digest.hex()
 
     @staticmethod
-    def preset(rate, capacity):
+    def preset(rate: int, capacity: int) -> Callable:
         """
         Returns a factory function for the given bitrate, sponge capacity and output length.
         The function accepts an optional initial input, ala hashlib.
         """
-        def create(initial_input=None):
+        def create(initial_input: str = None):
             h = KeccakHash(rate, capacity)
             if initial_input is not None:
                 h.update(initial_input)

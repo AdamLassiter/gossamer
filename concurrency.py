@@ -1,9 +1,10 @@
-#! /usr/bin/python3
+#! /usr/bin/env python3
 
+from collections.abc import Callable
 from functools import wraps
 
 
-def threaded(func):
+def threaded(func: Callable) -> Callable:
     from threading import Thread
 
     @wraps(func)
@@ -15,7 +16,7 @@ def threaded(func):
     return wrapper
 
 
-def parallelized(func):
+def parallelized(func: Callable) -> Callable:
     from multiprocessing import Process
 
     @wraps(func)
@@ -27,9 +28,9 @@ def parallelized(func):
     return wrapper
 
 
-def synchronized(lock):
+def synchronized(lock: object) -> Callable:
 
-    def locked(func):
+    def locked(func: Callable) -> Callable:
         # from threading import Lock
 
         @wraps(func)
@@ -45,5 +46,5 @@ def synchronized(lock):
     return locked
 
 
-def clustered(func):
+def clustered(func: Callable):
     pass
