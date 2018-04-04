@@ -5,3 +5,4 @@ __*
 *.so
 *wrap.c
 .*
+__pycache__
