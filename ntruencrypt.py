@@ -7,7 +7,7 @@ from random import randint
 from debug import debug
 
 
-def base_convert(digits: Iterable, fromBase: int, toBase: int) -> list:
+def base_convert(digits: bytes, fromBase: int, toBase: int) -> list:
     """
     Converts a list of ints, digits, from a given base to any other
     """
@@ -36,7 +36,7 @@ def split(unpadded_list: list, N: int) -> list:
     return padded_lists
 
 
-def join(padded_lists: list) -> list:
+def join(padded_lists: Iterable[bytes]) -> Iterable:
     """
     Joins a series of lists, stripping trailing 0s from the output
     """
@@ -56,7 +56,7 @@ def bytes2base(_bytes: bytes, base: int, N: int = 0):
     return split(unpadded_list, N) if N else [unpadded_list]
 
 
-def base2bytes(lists: list, base: int) -> bytes:
+def base2bytes(lists: Iterable[bytes], base: int) -> bytes:
     """
     Converts lists of ints in a given base to a string
     """

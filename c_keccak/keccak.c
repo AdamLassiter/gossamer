@@ -32,7 +32,7 @@ void to_PyObject(PyObject *pyObject, KeccakHash hash) {
     PyObject_SetAttrString(pyObject, "block_size", PyLong_FromUnsignedLong(hash.block_size));
     PyObject_SetAttrString(pyObject, "capacity", PyLong_FromUnsignedLong(hash.capacity));
     PyObject *stateObj = PyTuple_New(sizeof(hash.state));
-    for (int i = 0; i < sizeof(hash.state); i++) {
+    for (unsigned int i = 0; i < sizeof(hash.state); i++) {
         PyTuple_SetItem(stateObj, i, PyLong_FromUnsignedLong(hash.state[i]));
     }
     PyObject_SetAttrString(pyObject, "state", stateObj);
@@ -166,7 +166,7 @@ void c_absorb(KeccakHash hash, string input) {
     /* Absorb all the input blocks */
     while (input.len > 0) {
         hash.block_size = MIN(input.len, hash.rate_bytes);
-        for (int i = 0; i < hash.block_size; i++)
+        for (unsigned int i = 0; i < hash.block_size; i++)
             hash.state[i] ^= input.str[i];
         input.str += hash.block_size;
         input.len -= hash.block_size;
@@ -178,11 +178,11 @@ void c_absorb(KeccakHash hash, string input) {
     }
 }
 void absorb(PyObject *hashObject, PyObject *bytesObj) {
-    int size = PyBytes_Size(bytesObj);
     string input = (string) {
-        .str = (unsigned char *) PyBytes_AsString(bytesObj),
-        .len = size
+        .len = PyBytes_Size(bytesObj),
     };
+    input.str = malloc(sizeof(char) * input.len);
+    memcpy(input.str, PyBytes_AsString(bytesObj), input.len);
     KeccakHash hash = from_PyObject(hashObject);
     c_absorb(hash, input);
     to_PyObject(hashObject, hash);

@@ -9,7 +9,7 @@ typedef string (*hash_func)(string in, int out_bytes);
 
 
 void xor (string a, string b, string o) {
-    for (int i = 0; i < o.len; i++)
+    for (unsigned int i = 0; i < o.len; i++)
         o.str[i] = a.str[i] ^ b.str[i];
 }
 
@@ -47,7 +47,7 @@ string c_encrypt(string plaintext, string key, string iv, enum cipher_mode mode)
     assert(plaintext.len % HASH_BLOCKSIZE == 0);
     string ciphertext = new_string(plaintext.len), temp = new_string(HASH_BLOCKSIZE);
     string sub_text;
-    for (int i = 0; i < plaintext.len / HASH_BLOCKSIZE; i++) {
+    for (unsigned int i = 0; i < plaintext.len / HASH_BLOCKSIZE; i++) {
         sub_text = (string) {
             .str = plaintext.str + i * plaintext.len / HASH_BLOCKSIZE,
             .len = HASH_BLOCKSIZE
@@ -95,7 +95,7 @@ string c_decrypt(string ciphertext, string key, string iv, enum cipher_mode mode
     assert(ciphertext.len % HASH_BLOCKSIZE == 0);
     string plaintext = new_string(ciphertext.len), temp = new_string(HASH_BLOCKSIZE);
     string sub_text;
-    for (int i = 0; i < ciphertext.len / HASH_BLOCKSIZE; i++) {
+    for (unsigned int i = 0; i < ciphertext.len / HASH_BLOCKSIZE; i++) {
         sub_text = (string) {
             .str = ciphertext.str + i * ciphertext.len / HASH_BLOCKSIZE,
             .len = HASH_BLOCKSIZE
