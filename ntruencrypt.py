@@ -4,7 +4,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from random import randint
 
-from debug import debug
+from abcs import AsymmetricCipher
 
 
 def base_convert(digits: bytes, fromBase: int, toBase: int) -> list:
@@ -124,7 +124,7 @@ class NTRUPolynomial(tuple):
         return self.new(self.cLib.inverse_modpn(self, pn))
 
 
-class NTRUCipher(object):
+class NTRUCipher(AsymmetricCipher):
 
     def __init__(self, params: dict, keypair: dict = None) -> None:
         self.key = keypair if keypair else self.keygen(params)
@@ -176,7 +176,7 @@ class NTRUCipher(object):
                  for x in bytes2base(bytes(text, 'utf8'), self.params['p'], self.params['N'])]
         return base2bytes(polys, self.params['q']).decode('raw_unicode_escape')
 
-    def decrypt_poly(self, poly):
+    def __decrypt_poly(self, poly):
         a = (self.key['priv'] * poly) % self.params['q']
         a = a.centerlift(self.params['q'])
         b = a % self.params['p']
@@ -186,7 +186,7 @@ class NTRUCipher(object):
         """
         Decrypt a given string using the current private key and parameters
         """
-        polys = [self.decrypt_poly(NTRUPolynomial(x))
+        polys = [self.__decrypt_poly(NTRUPolynomial(x))
                  for x in bytes2base(bytes(text, 'raw_unicode_escape'),
                                      self.params['q'], self.params['N'])]
         return base2bytes(polys, self.params['p']).decode('utf8')
@@ -195,7 +195,7 @@ class NTRUCipher(object):
         return base2bytes([self.key['pub'] % self.params['p']] + [[1]],
                           self.params['p'])
 
-    def privkey(self):
+    def privkey(self) -> str:
         return base2bytes([self.key['priv'] % self.params['q']] + [[1]],
                           self.params['q'])
 

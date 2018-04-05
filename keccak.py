@@ -4,8 +4,10 @@ from __future__ import annotations
 from collections.abc import Callable
 from copy import deepcopy
 
+from abcs import Hash
 
-class KeccakHash(object):
+
+class KeccakHash(Hash):
     import c_keccak.keccak as cLib
 
     def __init__(self, rate: int, capacity: int) -> None:
