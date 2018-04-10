@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 from __future__ import annotations
+from binascii import a2b_base64 as encode, b2a_base64 as decode
 from collections.abc import Callable, Iterable
 from random import randint
 
@@ -174,7 +175,11 @@ class NTRUCipher(AsymmetricCipher):
         """
         polys = [self.__encrypt_poly(NTRUPolynomial(x))
                  for x in bytes2base(bytes(text, 'utf8'), self.params['p'], self.params['N'])]
-        return base2bytes(polys, self.params['q']).decode('raw_unicode_escape')
+        try:
+            return decode(base2bytes(polys, self.params['q']))
+        except Exception as e:
+            breakpoint()
+            raise e
 
     def __decrypt_poly(self, poly):
         a = (self.key['priv'] * poly) % self.params['q']
@@ -187,7 +192,7 @@ class NTRUCipher(AsymmetricCipher):
         Decrypt a given string using the current private key and parameters
         """
         polys = [self.__decrypt_poly(NTRUPolynomial(x))
-                 for x in bytes2base(bytes(text, 'raw_unicode_escape'),
+                 for x in bytes2base(bytes(encode(text)),
                                      self.params['q'], self.params['N'])]
         return base2bytes(polys, self.params['p']).decode('utf8')
 

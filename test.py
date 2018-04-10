@@ -14,7 +14,7 @@ class TestNTRUEncryptMethods(unittest.TestCase):
         self.assertTrue(self.ntru.keygen(self.ntru.params))
 
     def test_encode(self):
-        text = bytes(''.join([chr(random.randint(64, 95)) for _ in range(256)]), 'raw_unicode_escape')
+        text = bytes(''.join([chr(random.randint(64, 95)) for _ in range(256)]), 'utf8')
         encd = self.ntruencrypt.bytes2base(text, self.ntru.params['p'], self.ntru.params['N'])
         decd = self.ntruencrypt.base2bytes(encd, self.ntru.params['p'])
         self.assertEqual(text, decd)

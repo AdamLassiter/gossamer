@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 from __future__ import annotations
+from binascii import b2a_base64 as decode
 from collections.abc import Callable
 from copy import deepcopy
 
@@ -28,7 +29,7 @@ class KeccakHash(Hash):
     def digest(self) -> str:
         finalised = self.copy()
         digest = finalised.__squeeze()
-        return digest.decode('raw_unicode_escape')
+        return decode(digest)
 
     def hexdigest(self) -> str:
         finalised = self.copy()

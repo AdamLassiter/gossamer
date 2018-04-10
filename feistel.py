@@ -1,5 +1,7 @@
 #! /usr/bin/env python3
 
+from binascii import a2b_base64 as encode, b2a_base64 as decode
+
 from abcs import SymmetricCipher
 
 
@@ -29,13 +31,12 @@ class FeistelCipher(SymmetricCipher):
         if mode not in self.__modes:
             raise Exception("Error: mode %s not found" % mode)
         _bytes = self.cLib.f_encrypt(bytes(text, 'utf8'), self._key, iv, mode)
-        return _bytes.decode('raw_unicode_escape')
+        return decode(_bytes)
 
     def decrypt(self, text: str, iv: str, mode: int) -> str:
         def unpad(_bytes):
             return _bytes.rstrip(self.__pad_byte)[:-1]
         if mode not in self.__modes:
             raise Exception("Error: mode %s not found" % mode)
-        _bytes = self.cLib.f_decrypt(
-            bytes(text, 'raw_unicode_escape'), self._key, iv, mode)
-        return _bytes.decode('utf8')
+        _bytes = self.cLib.f_decrypt(bytes(encode(text)), self._key, iv, mode)
+        return decode(_bytes)
