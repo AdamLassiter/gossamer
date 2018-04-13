@@ -31,6 +31,7 @@ class FeistelCipher(SymmetricCipher):
         if mode not in self.__modes:
             raise Exception("Error: mode %s not found" % mode)
         _bytes = self.cLib.f_encrypt(bytes(text, 'utf8'), self._key, iv, mode)
+        # TODO: Implement encrypt/decrypt C lib
         return decode(_bytes)
 
     def decrypt(self, text: str, iv: str, mode: int) -> str:
