@@ -1,5 +1,5 @@
 #include "../c_keccak/keccak.h"
-// QUESTION: Is it bad to include relative (cousin) directories
+// FIXME: Is it bad to include relative (cousin) directories
 
 #include <assert.h>
 #include <stdbool.h>
@@ -13,7 +13,7 @@
         #define STRUCT_STRING
 
         typedef struct {
-            char *str;
+            unsigned char *str;
             unsigned long long int len;
         } string;
 
@@ -28,7 +28,7 @@
     string new_string(int len);
     void free_string(string s);
 
-    string c_encrypt(string text, string key, string iv, enum cipher_mode mode);
-    string c_decrypt(string text, string key, string iv, enum cipher_mode mode);
+    unsigned char *encrypt_(unsigned char *text, unsigned char *key, unsigned char *iv, int mode);
+    unsigned char *decrypt_(unsigned char *text, unsigned char *key, unsigned char *iv, int mode);
     
 #endif /* end of include guard: FEISTEL_H */

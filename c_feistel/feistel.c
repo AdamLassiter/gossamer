@@ -4,6 +4,7 @@
 
 #define HASH_BLOCKSIZE 1024
 #define FEISTEL_ROUNDS 4
+#define strlen(x) strlen((char *) x)
 
 typedef string (*hash_func)(string in, int out_bytes);
 
@@ -11,6 +12,21 @@ typedef string (*hash_func)(string in, int out_bytes);
 void xor (string a, string b, string o) {
     for (unsigned int i = 0; i < o.len; i++)
         o.str[i] = a.str[i] ^ b.str[i];
+}
+
+
+string new_string(int len) {
+    string s;
+    s = (string) {
+        .len = len,
+        .str = calloc(sizeof(*s.str), len)
+    };
+    return s;
+}
+
+
+void free_string(string s) {
+    free(s.str);
 }
 
 
@@ -89,6 +105,22 @@ string c_encrypt(string plaintext, string key, string iv, enum cipher_mode mode)
     free_string(temp);
     return ciphertext;
 }
+unsigned char *encrypt_(unsigned char *input_ptr, unsigned char *key_ptr, unsigned char *iv_ptr, int mode) {
+    assert(0 <= mode && mode <= 4);
+    string input = (string) {
+        .len = strlen(input_ptr),
+        .str = input_ptr
+    };
+    string key = (string) {
+        .len = strlen(key_ptr),
+        .str = key_ptr
+    };
+    string iv = (string) {
+        .len = strlen(iv_ptr),
+        .str = iv_ptr
+    };
+    return c_encrypt(input, key, iv, mode).str;
+}
 
 
 string c_decrypt(string ciphertext, string key, string iv, enum cipher_mode mode) {
@@ -138,4 +170,20 @@ string c_decrypt(string ciphertext, string key, string iv, enum cipher_mode mode
     }
     free_string(temp);
     return plaintext;
+}
+unsigned char *decrypt_(unsigned char *input_ptr, unsigned char *key_ptr, unsigned char *iv_ptr, int mode) {
+    assert(0 <= mode && mode <= 4);
+    string input = (string) {
+        .len = strlen(input_ptr),
+        .str = input_ptr
+    };
+    string key = (string) {
+        .len = strlen(key_ptr),
+        .str = key_ptr
+    };
+    string iv = (string) {
+        .len = strlen(iv_ptr),
+        .str = iv_ptr
+    };
+    return c_decrypt(input, key, iv, mode).str;
 }

@@ -3,7 +3,7 @@
 from distutils.core import setup, Extension
 
 feistel_module = Extension('_feistel',
-                           sources=['feistel_wrap.c', 'feistel.c'])
+                           sources=['feistel_wrap.c', 'feistel.c', '../c_keccak/keccak.c'])
 
 setup(name='feistel',
       version='0.1',

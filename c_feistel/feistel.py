@@ -99,13 +99,13 @@ except __builtin__.Exception:
     _newclass = 0
 
 
-def f_encrypt(arg1: 'PyObject *', arg2: 'PyObject *', arg3: 'PyObject *', arg4: 'int') -> "PyObject *":
-    return _feistel.f_encrypt(arg1, arg2, arg3, arg4)
-f_encrypt = _feistel.f_encrypt
+def encrypt_(arg1: 'unsigned char *', arg2: 'unsigned char *', arg3: 'unsigned char *', arg4: 'int') -> "unsigned char *":
+    return _feistel.encrypt_(arg1, arg2, arg3, arg4)
+encrypt_ = _feistel.encrypt_
 
-def f_decrypt(arg1: 'PyObject *', arg2: 'PyObject *', arg3: 'PyObject *', arg4: 'int') -> "PyObject *":
-    return _feistel.f_decrypt(arg1, arg2, arg3, arg4)
-f_decrypt = _feistel.f_decrypt
+def decrypt_(arg1: 'unsigned char *', arg2: 'unsigned char *', arg3: 'unsigned char *', arg4: 'int') -> "unsigned char *":
+    return _feistel.decrypt_(arg1, arg2, arg3, arg4)
+decrypt_ = _feistel.decrypt_
 # This file is compatible with both classic and new-style classes.
 
 

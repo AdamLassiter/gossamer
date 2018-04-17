@@ -195,3 +195,6 @@ string c_keccak(string input, int out_bytes) {
     c_absorb(hash, input);
     return c_squeeze(hash);
 }
+string c_hash(string input, int out_bytes) {
+    return c_keccak(input, out_bytes);
+}
