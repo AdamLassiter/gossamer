@@ -173,13 +173,13 @@ class NTRUCipher(AsymmetricCipher):
     def __encrypt_bytes(self, b: bytes) -> bytes:
         polys = [self.__encrypt_poly(NTRUPolynomial(x))
                  for x in bytes2base(b, self.params['p'], self.params['N'])]
-        return decode(base2bytes(polys, self.params['q']))
+        return base2bytes(polys, self.params['q'])
 
     def encrypt(self, text: str) -> str:
         """
         Encrypt a given string using the current public key and parameters
         """
-        return str(encode(self.__encrypt_bytes(bytes(text, 'utf8'))))
+        return str(encode(self.__encrypt_bytes(bytes(text, 'utf8'))), 'utf8')
         
     def __decrypt_poly(self, poly):
         a = (self.key['priv'] * poly) % self.params['q']
@@ -187,7 +187,7 @@ class NTRUCipher(AsymmetricCipher):
         b = a % self.params['p']
         return b
 
-    def __decrypt_bytes(self, b: bytes) -> bytes:
+    def __decrypt_bytes(self, b: bytes) -> str:
         polys = [self.__decrypt_poly(NTRUPolynomial(x))
                  for x in bytes2base(b, self.params['q'], self.params['N'])]
         return base2bytes(polys, self.params['p'])
@@ -196,7 +196,7 @@ class NTRUCipher(AsymmetricCipher):
         """
         Decrypt a given string using the current private key and parameters
         """
-        return str(self.__decrypt_bytes(decode(text)))
+        return str(self.__decrypt_bytes(decode(text)), 'utf8')
 
     def pubkey(self) -> str:
         return base2bytes([self.key['pub'] % self.params['p']] + [[1]],
