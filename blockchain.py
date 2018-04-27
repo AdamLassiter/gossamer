@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 from collections import namedtuple
+from functools import partial
 import hashlib
 import json
 from time import time
@@ -13,7 +14,8 @@ from flask import Flask, jsonify, request
 import requests
 
 
-Block = namedtuple('Block', ['index', 'timestamp', 'transactions', 'proof', 'previous_hash'])
+Block = namedtuple('Block', ['message', 'index', 'timestamp', 'transactions', 'proof', 'previous_hash'])
+Block.__new__.__defaults__ = (None,) * len(Block._fields)
 Transaction = namedtuple('Transaction', ['sender', 'recipient', 'amount'])
 
 
@@ -133,7 +135,7 @@ class BlockchainNode(Flask):
         self.node_id = str(uuid4()).replace('-', '')
         self.blockchain = Blockchain()
         for rule, func, methods in self.routes:
-            self.add_url_rule(rule, view_func=func, methods=methods)
+            self.add_url_rule(rule, view_func=getattr(self, func), methods=methods)
 
 
     def mine(self):
@@ -208,11 +210,11 @@ class BlockchainNode(Flask):
         return jsonify(response), 200
 
 
-    routes = [('/mine', mine, ['GET']),
-              ('/transactions/new', new_transaction, ['POST']),
-              ('/chain', full_chain, ['GET']),
-              ('/nodes/register', register_nodes, ['POST']),
-              ('/nodes/resolve', consensus, ['GET'])]
+    routes = [('/mine', 'mine', ['GET']),
+              ('/transactions/new', 'new_transaction', ['POST']),
+              ('/chain', 'full_chain', ['GET']),
+              ('/nodes/register', 'register_nodes', ['POST']),
+              ('/nodes/resolve', 'consensus', ['GET'])]
 
 
 
