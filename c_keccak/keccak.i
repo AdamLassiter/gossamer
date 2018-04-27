@@ -6,7 +6,7 @@
 
 extern void new_hash(PyObject *, unsigned int, unsigned int);
 
-%apply char {unsigned char};
+%apply char {char};
 extern PyObject *squeeze(PyObject *);
 
 extern void absorb(PyObject *, PyObject *);

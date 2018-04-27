@@ -5,7 +5,7 @@
 #ifndef KECCAK_H
     #define KECCAK_H
 
-    typedef unsigned char UINT8;
+    typedef char UINT8;
     typedef unsigned long long int UINT64;
     typedef UINT64 tKeccakLane;
 
@@ -58,7 +58,7 @@
         #define STRUCT_STRING
         
         typedef struct {
-            unsigned char *str;
+            char *str;
             unsigned long long int len;
         } string;
     

@@ -7,9 +7,6 @@
 typedef string (*hash_func)(string in, int out_bytes);
 
 
-// TODO: Copy Keccak SWIG wrapper
-
-
 void xor (string a, string b, string o) {
     for (unsigned int i = 0; i < o.len; i++)
         o.str[i] = a.str[i] ^ b.str[i];
@@ -106,7 +103,7 @@ string c_encrypt(string plaintext, string key, string iv, enum cipher_mode mode)
     free_string(temp);
     return ciphertext;
 }
-unsigned char *encrypt_(unsigned char *input_ptr, unsigned char *key_ptr, unsigned char *iv_ptr, int mode) {
+char *encrypt_(char *input_ptr, char *key_ptr, char *iv_ptr, int mode) {
     assert(0 <= mode && mode <= 4);
     string input = (string) {
         .len = strlen(input_ptr),
@@ -172,7 +169,7 @@ string c_decrypt(string ciphertext, string key, string iv, enum cipher_mode mode
     free_string(temp);
     return plaintext;
 }
-unsigned char *decrypt_(unsigned char *input_ptr, unsigned char *key_ptr, unsigned char *iv_ptr, int mode) {
+char *decrypt_(char *input_ptr, char *key_ptr, char *iv_ptr, int mode) {
     assert(0 <= mode && mode <= 4);
     string input = (string) {
         .len = strlen(input_ptr),

@@ -140,7 +140,7 @@ string c_squeeze(KeccakHash hash) {
         .str = malloc(hash.digest_size + 1), 
         .len = hash.digest_size
     };
-    unsigned char *outputPtr = output.str;
+    char *outputPtr = output.str;
     while (digest_size > 0) {
         hash.block_size = MIN(digest_size, hash.rate_bytes);
         memcpy(outputPtr, hash.state, hash.block_size);
