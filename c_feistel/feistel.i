@@ -5,5 +5,7 @@
     #include "../c_keccak/keccak.h"
 %}
 
+%apply char {unsigned char};
+
 extern unsigned char *encrypt_(unsigned char *, unsigned char *, unsigned char *, int);
 extern unsigned char *decrypt_(unsigned char *, unsigned char *, unsigned char *, int);

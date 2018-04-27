@@ -10,6 +10,7 @@ class CipherTests:
         text = ''.join([chr(random.randint(64, 95)) for _ in range(256)])
         encr = self.cipher.encrypt(text)
         decr = self.cipher.decrypt(encr)
+        print(text,encr,decr, sep='\n\n')
         self.assertEqual(text, decr)
 
 
@@ -23,7 +24,7 @@ class TestNTRUEncryptMethods(unittest.TestCase, CipherTests):
         self.assertTrue(self.cipher.keygen(self.cipher.params))
 
     def test_encode(self):
-        text = bytes(''.join([chr(random.randint(64, 95)) for _ in range(256)]), 'utf8')
+        text = bytes([random.randint(64, 95) for _ in range(256)])
         encd = self.ntruencrypt.bytes2base(text, self.cipher.params['p'], self.cipher.params['N'])
         decd = self.ntruencrypt.base2bytes(encd, self.cipher.params['p'])
         self.assertEqual(text, decd)
@@ -48,4 +49,4 @@ class TestFeistelCipherMethods(unittest.TestCase, CipherTests):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)

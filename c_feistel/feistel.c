@@ -1,12 +1,13 @@
 #include "feistel.h"
 
-// TODO: Implement Python SWIG wrappers
-
 #define HASH_BLOCKSIZE 1024
 #define FEISTEL_ROUNDS 4
 #define strlen(x) strlen((char *) x)
 
 typedef string (*hash_func)(string in, int out_bytes);
+
+
+// TODO: Copy Keccak SWIG wrapper
 
 
 void xor (string a, string b, string o) {
@@ -18,8 +19,8 @@ void xor (string a, string b, string o) {
 string new_string(int len) {
     string s;
     s = (string) {
-        .len = len,
-        .str = calloc(sizeof(*s.str), len)
+        .len = (unsigned long long) len,
+        .str = calloc(sizeof(s.str), len)
     };
     return s;
 }

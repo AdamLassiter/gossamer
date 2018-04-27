@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 from __future__ import annotations
-from binascii import b2a_base64 as decode
+from base64 import b64decode as decode
 from collections.abc import Callable
 from copy import deepcopy
 

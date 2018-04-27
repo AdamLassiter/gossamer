@@ -13,7 +13,7 @@
         #define STRUCT_STRING
 
         typedef struct {
-            unsigned char *str;
+            char *str;
             unsigned long long int len;
         } string;
 
@@ -28,7 +28,7 @@
     string new_string(int len);
     void free_string(string s);
 
-    unsigned char *encrypt_(unsigned char *text, unsigned char *key, unsigned char *iv, int mode);
-    unsigned char *decrypt_(unsigned char *text, unsigned char *key, unsigned char *iv, int mode);
+    char *encrypt_(char *text, char *key, char *iv, int mode);
+    char *decrypt_(char *text, char *key, char *iv, int mode);
     
 #endif /* end of include guard: FEISTEL_H */

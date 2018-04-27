@@ -1,9 +1,10 @@
 #! /usr/bin/env python3
 
 from __future__ import annotations
-from binascii import a2b_base64 as encode, b2a_base64 as decode
+from base64 import b64encode as encode, b64decode as decode
 from collections.abc import Callable, Iterable
 from random import randint
+from typing import Any
 
 from abcs import AsymmetricCipher
 
@@ -169,32 +170,33 @@ class NTRUCipher(AsymmetricCipher):
         e %= self.params['q']
         return e.centerlift(self.params['q']) % self.params['p']
 
+    def __encrypt_bytes(self, b: bytes) -> bytes:
+        polys = [self.__encrypt_poly(NTRUPolynomial(x))
+                 for x in bytes2base(b, self.params['p'], self.params['N'])]
+        return decode(base2bytes(polys, self.params['q']))
+
     def encrypt(self, text: str) -> str:
         """
         Encrypt a given string using the current public key and parameters
         """
-        polys = [self.__encrypt_poly(NTRUPolynomial(x))
-                 for x in bytes2base(bytes(text, 'utf8'), self.params['p'], self.params['N'])]
-        try:
-            return decode(base2bytes(polys, self.params['q']))
-        except Exception as e:
-            breakpoint()
-            raise e
-
+        return str(encode(self.__encrypt_bytes(bytes(text, 'utf8'))))
+        
     def __decrypt_poly(self, poly):
         a = (self.key['priv'] * poly) % self.params['q']
         a = a.centerlift(self.params['q'])
         b = a % self.params['p']
         return b
 
+    def __decrypt_bytes(self, b: bytes) -> bytes:
+        polys = [self.__decrypt_poly(NTRUPolynomial(x))
+                 for x in bytes2base(b, self.params['q'], self.params['N'])]
+        return base2bytes(polys, self.params['p'])
+
     def decrypt(self, text: str) -> str:
         """
         Decrypt a given string using the current private key and parameters
         """
-        polys = [self.__decrypt_poly(NTRUPolynomial(x))
-                 for x in bytes2base(bytes(encode(text)),
-                                     self.params['q'], self.params['N'])]
-        return base2bytes(polys, self.params['p']).decode('utf8')
+        return str(self.__decrypt_bytes(decode(text)))
 
     def pubkey(self) -> str:
         return base2bytes([self.key['pub'] % self.params['p']] + [[1]],

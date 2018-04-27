@@ -1,3 +1,5 @@
+#! /usr/bin/env python3
+
 from abc import ABC, abstractmethod
 
 
@@ -49,4 +51,11 @@ class NetworkLayer(ABC):
 
     @abstractmethod
     def recv(self) -> str:
+        pass
+
+
+class Blockchain(ABC):
+
+    @abstractmethod
+    def new_block(self, proof: int, previous_hash: str):
         pass
