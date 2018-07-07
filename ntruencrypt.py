@@ -4,7 +4,6 @@ from __future__ import annotations
 from base64 import b64encode as encode, b64decode as decode
 from collections.abc import Callable, Iterable
 from random import randint
-from typing import Any
 
 from abcs import AsymmetricCipher
 

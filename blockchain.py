@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 from collections import namedtuple
-from functools import partial
 import hashlib
 import json
 from time import time
@@ -80,7 +79,7 @@ class Blockchain:
         block = Block(**{
             'index': len(self.chain) + 1,
             'timestamp': time(),
-            'transactions': self.current_transactions,
+            'transactions': [transaction._asdict() for transaction in self.current_transactions],
             'proof': proof,
             'previous_hash': previous_hash or self.hash(self.chain[-1]),
         })
@@ -121,7 +120,7 @@ class Blockchain:
 
     @staticmethod
     def valid_proof(last_proof: int, proof: int, last_hash: str,
-                    difficulty: int = 4) -> bool:
+                    difficulty: int = 6) -> bool:
         guess = f'{last_proof}{proof}{last_hash}'.encode()
         guess_hash = hashlib.sha256(guess).hexdigest()
         return guess_hash[:difficulty] == "0" * difficulty
@@ -154,7 +153,7 @@ class BlockchainNode(Flask):
             'proof': block.proof,
             'previous_hash': block.previous_hash,
         })
-        return jsonify(response), 200
+        return jsonify(response._asdict()), 200
 
 
     def new_transaction(self):
@@ -175,7 +174,7 @@ class BlockchainNode(Flask):
 
     def full_chain(self):
         response = {
-            'chain': self.blockchain.chain,
+            'chain': [block._asdict() for block in self.blockchain.chain],
             'length': len(self.blockchain.chain),
         }
         return jsonify(response), 200
@@ -200,12 +199,12 @@ class BlockchainNode(Flask):
         if replaced:
             response = {
                 'message': 'Our chain was replaced',
-                'new_chain': self.blockchain.chain
+                'new_chain': [block._asdict() for block in self.blockchain.chain],
             }
         else:
             response = {
                 'message': 'Our chain is authoritative',
-                'chain': self.blockchain.chain
+                'chain': [block._asdict() for block in self.blockchain.chain],
             }
         return jsonify(response), 200
 
