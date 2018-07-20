@@ -12,20 +12,18 @@ _The Gossamer network aims to provide anonymity by disclosing addresses only to 
 
 ### LZW
 * Provides a basic LZW compression scheme that may be used for longer messages
-* _May provide a C implementation, though this would be *HIDEOUS*_
 
 ### NTRUEncrypt
-* Provides a high-performance C implementation of the NTRUEncrypt algorithm
-* _May allow for homomorphic functions to be applied to the scheme_
+* Provides a typed Haskell implementation of the NTRUEncrypt algorithm
 
 ### SHA3-Keccak
-* Provides a high-performance C implementation of the Keccak Hash algorithm
+* Provides a typed Haskell implementation of the Keccak Hash algorithm
 
 ### AES
-* Should provide a C implementation of the AES algorithm
+* Provides a typed Haskell implementation of the AES algorithm
 
 ### Feistel
-* Should provide a high-performance C implementation of a Feistel cipher, which may be used with arbitrary functions
+* Provides a typed Haskell implementation of a Feistel cipher, which may be used with arbitrary hash functions
 
 ## Specifics
 * Each client connects to a number of other clients
@@ -42,5 +40,4 @@ This program is free software: you can redistribute it and/or modify it under th
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.  
 You should have received a copy of the GNU General Public License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-[//]: # "Redesign README to be Modules->Classes(->Functions?)"
 [//]: # "Add sources, flavour"
