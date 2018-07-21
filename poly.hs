@@ -3,7 +3,7 @@ import Data.List (find, intercalate)
 import Data.Maybe (fromMaybe)
 import Debug.Trace (trace, traceShow)
 
-newtype Polynomial t = Polynomial [t]
+
 data Cond a = a :? a
 
 infixl 0 ?
@@ -13,6 +13,7 @@ infixl 1 :?
 True  ? (x :? _) = x
 False ? (_ :? y) = y
 
+
 denumerate :: (Integral b) => [a] -> b -> [(a,b)]
 denumerate [] _ = []
 denumerate (x:xs) n = (x,n):denumerate xs (n-1)
@@ -21,6 +22,14 @@ enumerate :: [a] -> [(a,Int)]
 enumerate [] = []
 enumerate xs = reverse (denumerate (reverse xs) (length xs - 1))
 
+ensureAtLeast :: (Num t) => [t] -> Int -> [t]
+ensureAtLeast xs n
+  | length xs < n = ensureAtLeast (0:xs) n
+  | otherwise = xs
+
+
+newtype Polynomial t = Polynomial [t]
+newtype Keypair t = Keypair (t t)
 
 instance (Num a, Eq a, Show a) => Show (Polynomial a) where
     show (Polynomial xs) = show xs
@@ -31,12 +40,6 @@ instance (Num a, Eq a, Show a) => Show (Polynomial a) where
     --          wrap (coefficient, 0) = show coefficient
     --          wrap (1, exponent) = "x^" ++ show exponent
     --          wrap (coefficient, exponent) = show coefficient ++ "x^" ++ show exponent
-
-
-ensureAtLeast :: (Num t) => [t] -> Int -> [t]
-ensureAtLeast xs n
-  | length xs < n = ensureAtLeast (0:xs) n
-  | otherwise = xs
 
 
 rshift :: Polynomial t -> Polynomial t
@@ -112,8 +115,8 @@ listUntil pred f prev
   | otherwise = prev : listUntil pred f next
     where next = f prev
 
-inverseStep :: (Show t, Eq t, Integral t) => ([Polynomial t], t, Int) -> ([Polynomial t], t, Int)
-inverseStep (ps, q, k)
+inverseStep1 :: (Eq t, Integral t) => ([Polynomial t], t, Int) -> ([Polynomial t], t, Int)
+inverseStep1 (ps, q, k)
   | degree f == 0 = (ps, q, k)
   | head fs == 0  = ([lshift f, g, b, rshift c], q, succ k)
   | otherwise     = ([mod (sub f' (mul u g')) q, mod g' q, mod (sub b' (mul u c')) q, mod c' q], q, k)
@@ -123,17 +126,37 @@ inverseStep (ps, q, k)
           (f', g', b', c') = degree f < degree g ? (g, f, c, b) :? (f, g, b, c)
           u                = Polynomial [head fs * inv (head gs) q]
 
-inverseModP :: (Show t, Integral t) => Polynomial t -> t -> Polynomial t
-inverseModP f0 p = mod (lshiftn (mul (Polynomial [inv (head fs) p]) (Polynomial (init bs))) (k `rem` n)) p
-    where n = length f0s
+inverseModP :: (Integral t) => Polynomial t -> t -> Polynomial t
+inverseModP f p = mod (lshiftn (mul (Polynomial [inv (head hs) p]) (Polynomial (init bs))) (k `rem` n)) p
+    where n = length fs
           z = 0 `asTypeOf` p
           o = 1 `asTypeOf` p
-          initial = (map Polynomial [f0s ++ [z], -o:replicate (n - 1) z ++ [o], o:replicate n z, replicate (n + 1) z], p, n)
-          steps   = listUntil (\(ps, _, _) -> degree (head ps) == 0) inverseStep initial
-          ([f, g, b, c], _, k) = last steps
-          Polynomial f0s = f0
-          Polynomial fs  = f
-          Polynomial bs  = b
+          initial = (map Polynomial [fs ++ [z], -o:replicate (n - 1) z ++ [o], o:replicate n z, replicate (n + 1) z], p, n)
+          steps   = listUntil (\(ps, _, _) -> degree (head ps) == 0) inverseStep1 initial
+          ([h, g, b, c], _, k) = last steps
+          Polynomial fs = f
+          Polynomial hs = h
+          Polynomial bs = b
+
+factorStep :: t -> t -> t
+factorStep pn p
+  | pn `rem` p <> 0 = factorStep pn (p + 1)
+  | pn > 1          = factorStep (pn / p) + 1 `asTypeOf` p
+  | otherwise       = 0 `asTypeOf` p
+
+factor :: t -> (t, t)
+factor pn = factorStep pn 2
+
+inverseStep2 :: ([Polynomial t], [t]) -> ([Polynomial t], [t])
+inverseStep2 ([f, g], [p, n, r]) = ([f, g'], [p, n `quot` 2, r * 2])
+    where g' = mod (sub (mul Polynomial [2] g) (mul f g)) (p ** r)
+
+inverseModPn :: (Integral t) => Polynomial t -> t -> t -> Polynomial t
+inverseModPn f p n = h
+    where g = inverseModP f p
+          initial = ([f, g], [p, n, 2])
+          steps   = listUntil (\(ps, [_, _, n]) -> n <= 0) inverseStep2
+          ([_, h, _, _], _) = last steps
 
 
 main = let p = Polynomial [-1, 1, 1, 0, -1, 0, 1, 0, 0, 1, -1] in
