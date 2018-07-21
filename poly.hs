@@ -1,3 +1,5 @@
+module Polynomial (Polynomial, add, mul, inverseModP, inverseModPn) where
+
 import Prelude hiding (mod)
 import Data.List (find, intercalate)
 import Data.Maybe (fromMaybe)
@@ -29,7 +31,7 @@ ensureAtLeast xs n
 
 
 newtype Polynomial t = Polynomial [t]
-newtype Keypair t = Keypair (t t)
+newtype Keypair t = Keypair (t, t)
 
 instance (Num a, Eq a, Show a) => Show (Polynomial a) where
     show (Polynomial xs) = show xs
