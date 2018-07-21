@@ -135,30 +135,30 @@ inverseModP f p = mod (lshiftn (mul (Polynomial [inv (head hs) p]) (Polynomial (
           o = 1 `asTypeOf` p
           initial = (map Polynomial [fs ++ [z], -o:replicate (n - 1) z ++ [o], o:replicate n z, replicate (n + 1) z], p, n)
           steps   = listUntil (\(ps, _, _) -> degree (head ps) == 0) inverseStep1 initial
-          ([h, g, b, c], _, k) = last steps
+          ([h, _, b, _], _, k) = last steps
           Polynomial fs = f
           Polynomial hs = h
           Polynomial bs = b
 
-factorStep :: t -> t -> t
+factorStep :: (Integral t) => t -> t -> (t, t)
 factorStep pn p
-  | pn `rem` p <> 0 = factorStep pn (p + 1)
-  | pn > 1          = factorStep (pn / p) + 1 `asTypeOf` p
-  | otherwise       = 0 `asTypeOf` p
+  | pn `rem` p /= 0 = factorStep pn (p + 1)
+  | pn > 1          = let (n, p) = factorStep (pn `quot` p) p in (n + 1 `asTypeOf` p, p)
+  | otherwise       = (0 `asTypeOf` p, p)
 
-factor :: t -> (t, t)
+factor :: (Integral t) => t -> (t, t)
 factor pn = factorStep pn 2
 
-inverseStep2 :: ([Polynomial t], [t]) -> ([Polynomial t], [t])
-inverseStep2 ([f, g], [p, n, r]) = ([f, g'], [p, n `quot` 2, r * 2])
-    where g' = mod (sub (mul Polynomial [2] g) (mul f g)) (p ** r)
+inverseStep2 :: (Integral t) => ([Polynomial t], t, [Int]) -> ([Polynomial t], t, [Int])
+inverseStep2 ([f, g], p, [n, r]) = ([f, g'], p, [n `quot` 2, r * 2])
+    where g' = mod (sub (mul (Polynomial [2 `asTypeOf` p]) g) (mul f g)) (product (replicate r p))
 
-inverseModPn :: (Integral t) => Polynomial t -> t -> t -> Polynomial t
+inverseModPn :: (Integral t) => Polynomial t -> t -> Int -> Polynomial t
 inverseModPn f p n = h
     where g = inverseModP f p
-          initial = ([f, g], [p, n, 2])
-          steps   = listUntil (\(ps, [_, _, n]) -> n <= 0) inverseStep2
-          ([_, h, _, _], _) = last steps
+          initial = ([f, g], p, [n, 2])
+          steps   = listUntil (\(_, _, [_, _, n]) -> n <= 0) inverseStep2 initial
+          ([_, h], _, _) = last steps
 
 
 main = let p = Polynomial [-1, 1, 1, 0, -1, 0, 1, 0, 0, 1, -1] in
