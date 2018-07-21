@@ -1,4 +1,4 @@
-module Polynomial (Polynomial, add, mul, inverseModP, inverseModPn) where
+module Polynomial where
 
 import Prelude hiding (mod)
 import Data.List (find, intercalate)
@@ -34,14 +34,13 @@ newtype Polynomial t = Polynomial [t]
 newtype Keypair t = Keypair (t, t)
 
 instance (Num a, Eq a, Show a) => Show (Polynomial a) where
-    show (Polynomial xs) = show xs
-    --show (Polynomial xs) = intercalate " + " . filter (not . null) . map wrap $ enumerate xs
-    --    where wrap (0, _) = ""
-    --          wrap (1, 1) = "x"
-    --          wrap (coefficient, 1) = show coefficient ++ "x"
-    --          wrap (coefficient, 0) = show coefficient
-    --          wrap (1, exponent) = "x^" ++ show exponent
-    --          wrap (coefficient, exponent) = show coefficient ++ "x^" ++ show exponent
+    show (Polynomial xs) = intercalate " + " . filter (not . null) . map wrap $ enumerate xs
+        where wrap (0, _) = ""
+              wrap (1, 1) = "x"
+              wrap (coefficient, 1) = show coefficient ++ "x"
+              wrap (coefficient, 0) = show coefficient
+              wrap (1, exponent) = "x^" ++ show exponent
+              wrap (coefficient, exponent) = show coefficient ++ "x^" ++ show exponent
 
 
 rshift :: Polynomial t -> Polynomial t
@@ -140,24 +139,25 @@ inverseModP f p = mod (lshiftn (mul (Polynomial [inv (head hs) p]) (Polynomial (
           Polynomial hs = h
           Polynomial bs = b
 
-factorStep :: (Integral t) => t -> t -> (t, t)
+factorStep :: (Integral t) => t -> t -> (t, Int)
 factorStep pn p
   | pn `rem` p /= 0 = factorStep pn (p + 1)
-  | pn > 1          = let (n, p) = factorStep (pn `quot` p) p in (n + 1 `asTypeOf` p, p)
-  | otherwise       = (0 `asTypeOf` p, p)
+  | pn > 1          = let (p, n) = factorStep (pn `quot` p) p in (p, n + 1)
+  | otherwise       = (p, 0)
 
-factor :: (Integral t) => t -> (t, t)
+factor :: (Integral t) => t -> (t, Int)
 factor pn = factorStep pn 2
 
 inverseStep2 :: (Integral t) => ([Polynomial t], t, [Int]) -> ([Polynomial t], t, [Int])
 inverseStep2 ([f, g], p, [n, r]) = ([f, g'], p, [n `quot` 2, r * 2])
     where g' = mod (sub (mul (Polynomial [2 `asTypeOf` p]) g) (mul f g)) (product (replicate r p))
 
-inverseModPn :: (Integral t) => Polynomial t -> t -> Int -> Polynomial t
-inverseModPn f p n = h
+inverseModPn :: (Integral t) => Polynomial t -> t -> Polynomial t
+inverseModPn f pn = h
     where g = inverseModP f p
+          (p, n)  = factor pn
           initial = ([f, g], p, [n, 2])
-          steps   = listUntil (\(_, _, [_, _, n]) -> n <= 0) inverseStep2 initial
+          steps   = listUntil (\(_, _, [n, _]) -> n <= 0) inverseStep2 initial
           ([_, h], _, _) = last steps
 
 
