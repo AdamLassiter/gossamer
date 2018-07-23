@@ -1,9 +1,24 @@
 module Polynomial where
 
-import Prelude hiding (mod)
-import Data.List (find, intercalate)
-import Data.Maybe (fromMaybe)
-import Debug.Trace (trace, traceShow)
+import Prelude hiding (mod, exponent, length, (!!), replicate, take, drop)
+import qualified Prelude
+import Data.List (intercalate)
+
+
+length :: [a] -> Integer
+length = toInteger . Prelude.length
+
+(!!) :: [a] -> Integer -> a
+xs !! n = xs Prelude.!! fromInteger n
+
+replicate :: Integer -> a -> [a]
+replicate n = Prelude.replicate (fromInteger n)
+
+take :: Integer -> [a] -> [a]
+take n = Prelude.take (fromInteger n)
+
+drop :: Integer -> [a] -> [a]
+drop n = Prelude.drop (fromInteger n)
 
 
 data Cond a = a :? a
@@ -20,18 +35,17 @@ denumerate :: (Integral b) => [a] -> b -> [(a,b)]
 denumerate [] _ = []
 denumerate (x:xs) n = (x,n):denumerate xs (n-1)
 
-enumerate :: [a] -> [(a,Int)]
+enumerate :: [a] -> [(a,Integer)]
 enumerate [] = []
 enumerate xs = reverse (denumerate (reverse xs) (length xs - 1))
 
-ensureAtLeast :: (Num t) => [t] -> Int -> [t]
+ensureAtLeast :: (Num t) => [t] -> Integer -> [t]
 ensureAtLeast xs n
   | length xs < n = ensureAtLeast (0:xs) n
   | otherwise = xs
 
 
 newtype Polynomial t = Polynomial [t]
-newtype Keypair t = Keypair (t, t)
 
 instance (Num a, Eq a, Show a) => Show (Polynomial a) where
     show (Polynomial xs) = intercalate " + " . filter (not . null) . map wrap $ enumerate xs
@@ -49,14 +63,14 @@ rshift (Polynomial xs) = Polynomial $ last xs:init xs
 lshift :: Polynomial t -> Polynomial t
 lshift (Polynomial xs) = Polynomial $ tail xs ++ [head xs]
 
-lshiftn :: Polynomial t -> Int -> Polynomial t
+lshiftn :: Polynomial t -> Integer -> Polynomial t
 lshiftn p n
   | n > 0  = lshiftn (lshift p) (n - 1)
   | n == 0 = p
   | n < 0  = lshiftn (rshift p) (n + 1)
 
 
-degree :: (Num t, Eq t) => Polynomial t -> Int
+degree :: (Integral t) => Polynomial t -> Integer
 degree (Polynomial xs)
   | all (== 0) xs    = 0
   | (xs !! ord) == 0 = degree (Polynomial $ init xs)
@@ -67,11 +81,11 @@ centerlift :: (Integral t) => Polynomial t -> t -> Polynomial t
 centerlift (Polynomial xs) n = Polynomial [c > n `quot` 2 ? c - n :? c | c <- xs]
 
 
-add :: (Eq t, Num t) => Polynomial t -> Polynomial t -> Polynomial t
+add :: (Integral t) => Polynomial t -> Polynomial t -> Polynomial t
 add (Polynomial xs) (Polynomial ys) = Polynomial $ zipWith (+) (ensureAtLeast xs maxDegree) (ensureAtLeast ys maxDegree)
     where maxDegree = max (degree $ Polynomial xs) (degree $ Polynomial ys)
 
-sub :: (Eq t, Num t) => Polynomial t -> Polynomial t -> Polynomial t
+sub :: (Integral t) => Polynomial t -> Polynomial t -> Polynomial t
 sub (Polynomial xs) (Polynomial ys) = Polynomial $ zipWith (-) (ensureAtLeast xs maxDegree) (ensureAtLeast ys maxDegree)
     where maxDegree = max (degree $ Polynomial xs) (degree $ Polynomial ys)
 
@@ -84,13 +98,17 @@ modulo a b
 mod :: (Integral t) => Polynomial t -> t -> Polynomial t
 mod (Polynomial xs) n = Polynomial $ map (`modulo` n) xs
 
-mul :: (Eq t, Num t) => Polynomial t -> Polynomial t -> Polynomial t
-mul (Polynomial []) (Polynomial ys) = Polynomial $ replicate (length ys) 0
-mul (Polynomial (x:xs)) (Polynomial ys) = add (Polynomial $ map (*x) ys) (rshift tail)
-    where tail = mul (Polynomial xs) (Polynomial ys)
+mul1 :: (Integral t) => Polynomial t -> Polynomial t -> Polynomial t
+mul1 (Polynomial []) (Polynomial ys) = Polynomial $ replicate (length ys) 0
+mul1 (Polynomial (x:xs)) (Polynomial ys) = add (Polynomial $ map (*x) ys) (rshift tail)
+    where tail = mul1 (Polynomial xs) (Polynomial ys)
+
+mul :: (Integral t) => Polynomial t -> Polynomial t -> Polynomial t
+mul (Polynomial xs) (Polynomial ys) = mul1 (Polynomial $ ensureAtLeast xs maxDegree) (Polynomial $ ensureAtLeast ys maxDegree)
+    where maxDegree = max (degree $ Polynomial xs) (degree $ Polynomial ys)
 
 
-isZero :: (Eq t, Num t) => Polynomial t -> Bool
+isZero :: (Integral t) => Polynomial t -> Bool
 isZero (Polynomial xs) = degree (Polynomial xs) == 0 && head xs == 0
 
 
@@ -116,7 +134,7 @@ listUntil pred f prev
   | otherwise = prev : listUntil pred f next
     where next = f prev
 
-inverseStep1 :: (Eq t, Integral t) => ([Polynomial t], t, Int) -> ([Polynomial t], t, Int)
+inverseStep1 :: (Eq t, Integral t) => ([Polynomial t], t, Integer) -> ([Polynomial t], t, Integer)
 inverseStep1 (ps, q, k)
   | degree f == 0 = (ps, q, k)
   | head fs == 0  = ([lshift f, g, b, rshift c], q, succ k)
@@ -139,16 +157,16 @@ inverseModP f p = mod (lshiftn (mul (Polynomial [inv (head hs) p]) (Polynomial (
           Polynomial hs = h
           Polynomial bs = b
 
-factorStep :: (Integral t) => t -> t -> (t, Int)
+factorStep :: (Integral t) => t -> t -> (t, Integer)
 factorStep pn p
   | pn `rem` p /= 0 = factorStep pn (p + 1)
   | pn > 1          = let (p, n) = factorStep (pn `quot` p) p in (p, n + 1)
   | otherwise       = (p, 0)
 
-factor :: (Integral t) => t -> (t, Int)
+factor :: (Integral t) => t -> (t, Integer)
 factor pn = factorStep pn 2
 
-inverseStep2 :: (Integral t) => ([Polynomial t], t, [Int]) -> ([Polynomial t], t, [Int])
+inverseStep2 :: (Integral t) => ([Polynomial t], t, [Integer]) -> ([Polynomial t], t, [Integer])
 inverseStep2 ([f, g], p, [n, r]) = ([f, g'], p, [n `quot` 2, r * 2])
     where g' = mod (sub (mul (Polynomial [2 `asTypeOf` p]) g) (mul f g)) (product (replicate r p))
 
@@ -157,10 +175,11 @@ inverseModPn f pn = h
     where g = inverseModP f p
           (p, n)  = factor pn
           initial = ([f, g], p, [n, 2])
-          steps   = listUntil (\(_, _, [n, _]) -> n <= 0) inverseStep2 initial
+          steps   = listUntil (\(_, _, [x, _]) -> x <= 0) inverseStep2 initial
           ([_, h], _, _) = last steps
 
 
+main :: IO()
 main = let p = Polynomial [-1, 1, 1, 0, -1, 0, 1, 0, 0, 1, -1] in
            --print $ degree $ Polynomial [0, 0, 0, 0, 0, 0]
            print $ foldl1 (++) ["invert (", show p, ") mod 3 = ", show (inverseModP p 3)]
