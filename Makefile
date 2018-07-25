@@ -1,5 +1,5 @@
 HC=ghc
-HFLAGS=--make -package Crypto
+HFLAGS=--make -prof
 
 TARGETS=Ntru
 

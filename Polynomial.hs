@@ -2,6 +2,7 @@ module Polynomial where
 
 import Prelude hiding (mod, exponent, length, (!!), replicate, take, drop)
 import qualified Prelude
+import Debug.Trace (traceStack)
 import Data.List (intercalate)
 
 
@@ -128,13 +129,7 @@ inv a b
     where [gcd, x, _] = eea a b
 
 
-listUntil :: (t -> Bool) -> (t -> t) -> t -> [t]
-listUntil pred f prev
-  | pred prev = [prev]
-  | otherwise = prev : listUntil pred f next
-    where next = f prev
-
-inverseStep1 :: (Eq t, Integral t) => ([Polynomial t], t, Integer) -> ([Polynomial t], t, Integer)
+inverseStep1 :: (Integral t) => ([Polynomial t], t, Integer) -> ([Polynomial t], t, Integer)
 inverseStep1 (ps, q, k)
   | degree f == 0 = (ps, q, k)
   | head fs == 0  = ([lshift f, g, b, rshift c], q, succ k)
@@ -151,8 +146,7 @@ inverseModP f p = mod (lshiftn (mul (Polynomial [inv (head hs) p]) (Polynomial (
           z = 0 `asTypeOf` p
           o = 1 `asTypeOf` p
           initial = (map Polynomial [fs ++ [z], -o:replicate (n - 1) z ++ [o], o:replicate n z, replicate (n + 1) z], p, n)
-          steps   = listUntil (\(ps, _, _) -> degree (head ps) == 0) inverseStep1 initial
-          ([h, _, b, _], _, k) = last steps
+          ([h, _, b, _], _, k) = until (\(ps, _, _) -> degree (head ps) == 0) inverseStep1 initial
           Polynomial fs = f
           Polynomial hs = h
           Polynomial bs = b
@@ -175,11 +169,10 @@ inverseModPn f pn = h
     where g = inverseModP f p
           (p, n)  = factor pn
           initial = ([f, g], p, [n, 2])
-          steps   = listUntil (\(_, _, [x, _]) -> x <= 0) inverseStep2 initial
-          ([_, h], _, _) = last steps
+          ([_, h], _, _) = until (\(_, _, [x, _]) -> x <= 0) inverseStep2 initial
 
 
 main :: IO()
-main = let p = Polynomial [-1, 1, 1, 0, -1, 0, 1, 0, 0, 1, -1] in
+main = let p = Polynomial [-1, 1, 1, 0, -1, 0, 1, 0, 0, 1, -1]  :: Polynomial Integer in
            --print $ degree $ Polynomial [0, 0, 0, 0, 0, 0]
            print $ foldl1 (++) ["invert (", show p, ") mod 3 = ", show (inverseModP p 3)]
