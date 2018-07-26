@@ -32,7 +32,7 @@ setAt :: (Integral t) => [t] -> Integer -> t -> [t]
 setAt xs i x = take i xs ++ [x] ++ drop (i + 1) xs
 
 
-randomPoly :: (Integral t, Show t) => RandomGenerator -> Params t -> IO (RandomGenerator, Polynomial t)
+randomPoly :: (Integral t) => RandomGenerator -> Params t -> IO (RandomGenerator, Polynomial t)
 randomPoly gen (Params (n, d, _, _)) = do
     let zero = replicate n 0
     let randomPolyDelta = \loop (xs, gen, delta, n) -> do
@@ -48,7 +48,7 @@ randomPoly gen (Params (n, d, _, _)) = do
     (ys, gen) <- flip fix (xs, gen, -1, d-1) randomPolyDelta
     return $ (gen, Polynomial ys)
 
-keygen :: (Integral t, Show t) => RandomGenerator -> Params t -> IO (RandomGenerator, Keypair t)
+keygen :: (Integral t) => RandomGenerator -> Params t -> IO (RandomGenerator, Keypair t)
 keygen gen params = do
     (gen, f, fq) <- flip fix gen $ \loop gen -> do
         (gen, r)  <- randomPoly gen params

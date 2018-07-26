@@ -145,7 +145,7 @@ inverseStep (ps, q, k)
          u                = Polynomial [head fs * g0Inv]
 
 
-inverseModP :: (Integral t, Show t) => Polynomial t -> t -> Maybe (Polynomial t)
+inverseModP :: (Integral t) => Polynomial t -> t -> Maybe (Polynomial t)
 inverseModP f p
   | isNothing nothingCriterion = Nothing
   | otherwise = Just $ mod (lshiftn (mul (Polynomial [h0Inv]) (Polynomial (init bs))) (k `rem` n)) p
@@ -160,7 +160,7 @@ inverseModP f p
           Polynomial bs = b 
 
 
-inverseModPn :: (Integral t, Show t) => Polynomial t -> (t, Integer) -> Maybe (Polynomial t)
+inverseModPn :: (Integral t) => Polynomial t -> (t, Integer) -> Maybe (Polynomial t)
 inverseModPn f (p, r)
   | isNothing g = Nothing
   | otherwise   = Just $ mod h (p ^ r)
