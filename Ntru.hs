@@ -32,11 +32,10 @@ setAt :: (Integral t) => [t] -> Integer -> t -> [t]
 setAt xs i x = take i xs ++ [x] ++ drop (i + 1) xs
 
 
-randomPoly :: (Integral t) => Params t -> IO (Polynomial t)
-randomPoly (Params (n, d, _, _)) = do
-    gen <- newGenAutoReseedIO (2^32) :: IO (GenAutoReseed CtrDRBG SystemRandom)
+randomPoly :: (Integral t, Show t) => RandomGenerator -> Params t -> IO (RandomGenerator, Polynomial t)
+randomPoly gen (Params (n, d, _, _)) = do
     let zero = replicate n 0
-    let randomPolyDelta = (\loop (xs, gen, delta, n) -> do
+    let randomPolyDelta = \loop (xs, gen, delta, n) -> do
         if n /= 0 then
             let (r, gen') = throwLeft $ crandomR (0, length xs - 1) gen in
             if (xs !! r) == 0 then
@@ -44,30 +43,31 @@ randomPoly (Params (n, d, _, _)) = do
             else
                 loop (xs, gen', delta, n)
         else
-            return (xs, gen))
-    (xs, gen') <- flip fix (zero, gen, 1, d) randomPolyDelta
-    (ys, _) <- flip fix (xs, gen', -1, d-1) randomPolyDelta
-    return $ Polynomial ys
+            return (xs, gen)
+    (xs, gen) <- flip fix (zero, gen, 1, d) randomPolyDelta
+    (ys, gen) <- flip fix (xs, gen, -1, d-1) randomPolyDelta
+    return $ (gen, Polynomial ys)
 
-keygen :: (Integral t, Show t) => Params t -> IO (Keypair t)
-keygen params = do
-    (f, fq) <- fix $ \loop -> do
-        r <- randomPoly params
+keygen :: (Integral t, Show t) => RandomGenerator -> Params t -> IO (RandomGenerator, Keypair t)
+keygen gen params = do
+    (gen, f, fq) <- flip fix gen $ \loop gen -> do
+        (gen, r)  <- randomPoly gen params
         let f = (r `mul` Polynomial [p]) `add` Polynomial [1]
         let fq = f `inverseModPn` qr
         if isNothing fq then
-            loop
+            loop gen
         else
-            return (f, fromJust fq)
-    g <- randomPoly params
-    let h = (fq `mul` g `mul` Polynomial [p]) `mod` q
-    return $ Keypair (h, f)
+            return (gen, f, fromJust fq)
+    (gen, g) <- randomPoly gen params
+    let h = (fq `mul` g `mul` Polynomial [p]) `mod` (q ^ r)
+    return $ (gen, Keypair (h, f))
   where (Params (_, _, p, qr)) = params
-        (q, _) = qr
+        (q, r) = qr
 
 
 main :: IO ()
 main = do
-    let params = Params (15, 5, 3, (2, 5))
-    key <- keygen params
+    let params = Params (587, 17, 3, (3, 10))
+    gen <- newGenAutoReseedIO (2^32) :: IO RandomGenerator
+    (gen, key) <- keygen gen params
     print key
