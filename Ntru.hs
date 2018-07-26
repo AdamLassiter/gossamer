@@ -67,7 +67,7 @@ keygen gen params = do
 
 main :: IO ()
 main = do
-    let params = Params (587, 17, 3, (3, 10))
+    let params = Params (251, 8, 3, (3, 8))
     gen <- newGenAutoReseedIO (2^32) :: IO RandomGenerator
     (gen, key) <- keygen gen params
     print key
