@@ -1,7 +1,7 @@
 HC=ghc
 HFLAGS=--make -prof
 
-TARGETS=Ntru
+TARGETS=Ntru Polynomial
 
 .PHONY:
 	all clean

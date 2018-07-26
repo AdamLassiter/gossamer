@@ -2,8 +2,11 @@ module Polynomial where
 
 import Prelude hiding (mod, exponent, length, (!!), replicate, take, drop)
 import qualified Prelude
-import Debug.Trace (traceStack)
+
 import Data.List (intercalate)
+import Data.Maybe (isNothing, fromJust)
+
+import Debug.Trace
 
 
 length :: [a] -> Integer
@@ -42,7 +45,7 @@ enumerate xs = reverse (denumerate (reverse xs) (length xs - 1))
 
 ensureAtLeast :: (Num t) => [t] -> Integer -> [t]
 ensureAtLeast xs n
-  | length xs < n = ensureAtLeast (0:xs) n
+  | length xs < n = ensureAtLeast (xs ++ [0]) n
   | otherwise = xs
 
 
@@ -83,12 +86,12 @@ centerlift (Polynomial xs) n = Polynomial [c > n `quot` 2 ? c - n :? c | c <- xs
 
 
 add :: (Integral t) => Polynomial t -> Polynomial t -> Polynomial t
-add (Polynomial xs) (Polynomial ys) = Polynomial $ zipWith (+) (ensureAtLeast xs maxDegree) (ensureAtLeast ys maxDegree)
-    where maxDegree = max (degree $ Polynomial xs) (degree $ Polynomial ys)
+add (Polynomial xs) (Polynomial ys) = Polynomial $ zipWith (+) (ensureAtLeast xs maxRingSize) (ensureAtLeast ys maxRingSize)
+    where maxRingSize = max (length xs) (length ys)
 
 sub :: (Integral t) => Polynomial t -> Polynomial t -> Polynomial t
-sub (Polynomial xs) (Polynomial ys) = Polynomial $ zipWith (-) (ensureAtLeast xs maxDegree) (ensureAtLeast ys maxDegree)
-    where maxDegree = max (degree $ Polynomial xs) (degree $ Polynomial ys)
+sub (Polynomial xs) (Polynomial ys) = Polynomial $ zipWith (-) (ensureAtLeast xs maxRingSize) (ensureAtLeast ys maxRingSize)
+    where maxRingSize = max (length xs) (length ys)
 
 
 modulo :: (Integral t) => t -> t -> t
@@ -105,12 +108,8 @@ mul1 (Polynomial (x:xs)) (Polynomial ys) = add (Polynomial $ map (*x) ys) (rshif
     where tail = mul1 (Polynomial xs) (Polynomial ys)
 
 mul :: (Integral t) => Polynomial t -> Polynomial t -> Polynomial t
-mul (Polynomial xs) (Polynomial ys) = mul1 (Polynomial $ ensureAtLeast xs maxDegree) (Polynomial $ ensureAtLeast ys maxDegree)
-    where maxDegree = max (degree $ Polynomial xs) (degree $ Polynomial ys)
-
-
-isZero :: (Integral t) => Polynomial t -> Bool
-isZero (Polynomial xs) = degree (Polynomial xs) == 0 && head xs == 0
+mul (Polynomial xs) (Polynomial ys) = mul1 (Polynomial $ ensureAtLeast xs maxRingSize) (Polynomial $ ensureAtLeast ys maxRingSize)
+    where maxRingSize = max (length xs) (length ys)
 
 
 swap :: [t] -> [t]
@@ -122,57 +121,53 @@ eea a b = let q = quot a b in
               let s = eea b (a - q * b) !! 2 in
                   swap (zipWith (-) (eea b (a - q * b)) [0, q * s, 0])
 
-inv :: (Eq t, Integral t) => t -> t -> t
+inv :: (Eq t, Integral t) => t -> t -> Maybe t
 inv a b
-  | a > 0     = (gcd == 1) ? (x `rem` b) :? 0
+  | a > 0     = (gcd == 1) ? Just (x `rem` b) :? Nothing
   | otherwise = inv ((a + b) `rem` b) b
     where [gcd, x, _] = eea a b
 
 
-inverseStep1 :: (Integral t) => ([Polynomial t], t, Integer) -> ([Polynomial t], t, Integer)
-inverseStep1 (ps, q, k)
-  | degree f == 0 = (ps, q, k)
-  | head fs == 0  = ([lshift f, g, b, rshift c], q, succ k)
-  | otherwise     = ([mod (sub f' (mul u g')) q, mod g' q, mod (sub b' (mul u c')) q, mod c' q], q, k)
-    where [f, g, b, c] = ps
-          Polynomial fs    = f
-          Polynomial gs    = g
-          (f', g', b', c') = degree f < degree g ? (g, f, c, b) :? (f, g, b, c)
-          u                = Polynomial [head fs * inv (head gs) q]
-
-inverseModP :: (Integral t) => Polynomial t -> t -> Polynomial t
-inverseModP f p = mod (lshiftn (mul (Polynomial [inv (head hs) p]) (Polynomial (init bs))) (k `rem` n)) p
+inverseModP :: (Integral t, Show t) => Polynomial t -> t -> Maybe (Polynomial t)
+inverseModP f p
+  | isNothing crit = Nothing
+  | otherwise      = Just $ mod (lshiftn (mul (Polynomial [h0Inv]) (Polynomial (init bs))) (k `rem` n)) p
     where n = length fs
-          z = 0 `asTypeOf` p
-          o = 1 `asTypeOf` p
-          initial = (map Polynomial [fs ++ [z], -o:replicate (n - 1) z ++ [o], o:replicate n z, replicate (n + 1) z], p, n)
-          ([h, _, b, _], _, k) = until (\(ps, _, _) -> degree (head ps) == 0) inverseStep1 initial
+          initial = (map Polynomial [fs ++ [0], -1:replicate (n - 1) 0 ++ [1], 1:replicate n 0, replicate (n + 1) 0], p, n)
+          ([h, _, b, _], _, k) = until (\(ps, _, _) -> degree (head ps) == 0) inverseStep initial
+          crit = inv (head hs) p
+          h0Inv = fromJust crit
           Polynomial fs = f
           Polynomial hs = h
           Polynomial bs = b
+          inverseStep (ps, q, k)
+            | degree f == 0 = traceShowId (ps, q, k)
+            | head fs == 0  = traceShowId ([lshift f, g, b, rshift c], q, succ k)
+            | otherwise     = traceShowId ([mod (sub f' (mul u g')) q, mod g' q, mod (sub b' (mul u c')) q, mod c' q], q, k)
+              where [f, g, b, c] = ps
+                    Polynomial fs    = f
+                    Polynomial gs    = g
+                    (f', g', b', c') = degree f < degree g ? (g, f, c, b) :? (f, g, b, c)
+                    u                = Polynomial [head fs * fromJust (inv (head gs) q)]
 
-factorStep :: (Integral t) => t -> t -> (t, Integer)
-factorStep pn p
-  | pn `rem` p /= 0 = factorStep pn (p + 1)
-  | pn > 1          = let (p, n) = factorStep (pn `quot` p) p in (p, n + 1)
-  | otherwise       = (p, 0)
 
-factor :: (Integral t) => t -> (t, Integer)
-factor pn = factorStep pn 2
-
-inverseStep2 :: (Integral t) => ([Polynomial t], t, [Integer]) -> ([Polynomial t], t, [Integer])
-inverseStep2 ([f, g], p, [n, r]) = ([f, g'], p, [n `quot` 2, r * 2])
-    where g' = mod (sub (mul (Polynomial [2 `asTypeOf` p]) g) (mul f g)) (product (replicate r p))
-
-inverseModPn :: (Integral t) => Polynomial t -> t -> Polynomial t
-inverseModPn f pn = h
+inverseModPn :: (Integral t, Show t) => Polynomial t -> (t, Integer) -> Maybe (Polynomial t)
+inverseModPn f (p, r)
+  | isNothing g = Nothing
+  | otherwise   = Just $ mod h (p ^ r)
     where g = inverseModP f p
-          (p, n)  = factor pn
-          initial = ([f, g], p, [n, 2])
-          ([_, h], _, _) = until (\(_, _, [x, _]) -> x <= 0) inverseStep2 initial
+          initial = (fromJust g, toRational r, 2)
+          (h, _, _) = until (\(_, x, _) -> x < 1) inverseStep initial
+          inverseStep (g, r, n) = (g', r / 2, n * 2)
+              where g' = mod (mul (sub (Polynomial [2]) (mul f g)) g) (p ^ n)
 
 
 main :: IO()
-main = let p = Polynomial [-1, 1, 1, 0, -1, 0, 1, 0, 0, 1, -1]  :: Polynomial Integer in
-           --print $ degree $ Polynomial [0, 0, 0, 0, 0, 0]
-           print $ foldl1 (++) ["invert (", show p, ") mod 3 = ", show (inverseModP p 3)]
+main = do
+    let f = Polynomial [-1, 1, 1, 0, -1, 0, 1, 0, 0, 1, -1]  :: Polynomial Integer
+    let fp = fromJust $ f `inverseModP` 3
+    let fq = fromJust $ f `inverseModPn` (2, 5)
+    putStrLn $ foldl1 (++) ["invert f := ", show f, " mod 3 = \n f^-1 mod 3 := ", show fp]
+    putStrLn $ foldl1 (++) ["f * f^-1 mod 3 = ", show $ (f `mul` fp) `mod` 3]
+    putStrLn $ foldl1 (++) ["invert f := ", show f, ") mod 32 = \n f^-1 mod 32 := ", show fq]
+    putStrLn $ foldl1 (++) ["f * f^-1 mod 32 = ", show $ (f `mul` fq) `mod` 32]
